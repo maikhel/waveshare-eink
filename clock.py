@@ -9,14 +9,22 @@ if os.path.exists(libdir):
 
 from waveshare_epd import epd7in5_V2
 from PIL import Image, ImageDraw, ImageFont
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 import time
 
+OUT_DIR = os.path.expanduser('~/eink')
+os.makedirs(OUT_DIR, exist_ok=True)
+LOG_FILE = os.path.join(OUT_DIR, 'clock.log')
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s: %(message)s',
-                    datefmt='%H:%M:%S')
+                    datefmt='%H:%M:%S',
+                    handlers=[
+                        logging.FileHandler(LOG_FILE),
+                        logging.StreamHandler(sys.stdout)
+                    ]
+                    )
 
 def run_clock():
     logging.info("Starting E-Ink clock")
@@ -40,9 +48,11 @@ def run_clock():
             draw = ImageDraw.Draw(image)
 
             # Get current time
-            now = datetime.now().strftime("%H:%M")
-            logging.info(f"Updating display with time {now}")
+            now = datetime.now() + timedelta(minutes=1)
+            now = now.strftime("%H:%M")
+            date = datetime.now().strftime("%d.%m.%Y")
 
+            logging.info(f"Updating display with time {now} and date {date}")
 
             # Center the text on screen
             w, h = draw.textsize(now, font=font_big)
