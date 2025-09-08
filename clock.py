@@ -32,13 +32,14 @@ def run_clock():
     epd = epd7in5_V2.EPD()
     logging.debug("Initializing display")
 
-
     epd.init()
     epd.Clear()
 
     # Pick a font and size you like
     font_big = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 120)
     font_small = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 40)
+
+    last_full_refresh = datetime.now()
 
     try:
         while True:
@@ -67,13 +68,27 @@ def run_clock():
             date_y = epd.height - dh - 20   # 20px margin from bottom
             draw.text((date_x, date_y), date, font=font_small, fill=0)
 
-            # Display
-            epd.display(epd.getbuffer(image))
+             # Decide refresh type
+            if (datetime.now() - last_full_refresh).seconds >= 300:  # 5 minutes
+                logging.info("Full refresh")
+                epd.display(epd.getbuffer(image))
+                last_full_refresh = datetime.now()
+            else:
+                logging.info("Partial refresh")
+                epd.init_fast()
+                buf = epd.getbuffer(image)
+                epd.display_Partial(buf, 0, 0, epd.width, epd.height)
 
-            logging.info("Done. Going to sleep 60 seconds")
             # Wait until the next full minute
+            logging.info("Done. Going to sleep 60 seconds")
             time.sleep(60)
 
+    except Exception as e:
+        logging.error("Fatal error occured: %s", e, exc_info=True)
+        epd.init_fast()
+        epd.Clear()
+        epd.sleep()
+        logging.info("Exiting cleanly")
     except KeyboardInterrupt:
         logging.warning("Interrupted by user, clearing display")
         epd.init()
