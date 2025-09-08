@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 import logging
 import time
 
-OUT_DIR = os.path.expanduser('~/eink')
+OUT_DIR = os.path.expanduser('~/eink/logs')
 os.makedirs(OUT_DIR, exist_ok=True)
 LOG_FILE = os.path.join(OUT_DIR, 'clock.log')
 
