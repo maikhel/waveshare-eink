@@ -8,10 +8,11 @@ if os.path.exists(libdir):
     sys.path.append(libdir)
 
 from waveshare_epd import epd7in5_V2
-from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime, timedelta
 import logging
 import time
+
+import drawing
 
 OUT_DIR = os.path.expanduser('~/eink/logs')
 os.makedirs(OUT_DIR, exist_ok=True)
@@ -35,9 +36,6 @@ def run_clock():
     epd.init_fast()
     epd.Clear()
 
-    # Pick a font and size you like
-    font_big = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 120)
-    font_small = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 40)
 
     last_full_refresh = datetime.now()
 
@@ -46,27 +44,8 @@ def run_clock():
             # Create a new blank image (white background)
             logging.debug("Creating new frame")
 
-            image = Image.new('1', (epd.width, epd.height), 255)
-            draw = ImageDraw.Draw(image)
-
-            # Get current time
-            now = datetime.now() + timedelta(minutes=1)
-            now = now.strftime("%H:%M")
-            date = datetime.now().strftime("%d.%m.%Y")
-
-            logging.info(f"Updating display with time {now} and date {date}")
-
-            # Center the text on screen
-            w, h = draw.textsize(now, font=font_big)
-            time_x = (epd.width - w) // 2
-            time_y = (epd.height - h) // 2
-
-            draw.text((time_x, time_y), now, font=font_big, fill=0)
-
-            dw, dh = draw.textsize(date, font=font_small)
-            date_x = (epd.width - dw) // 2
-            date_y = epd.height - dh - 20   # 20px margin from bottom
-            draw.text((date_x, date_y), date, font=font_small, fill=0)
+            logging.debug("Drawing current date and time")
+            image = drawing.draw_date_and_time(epd.width, epd.height)
 
              # Decide refresh type
             if (datetime.now() - last_full_refresh).seconds >= 300:  # 5 minutes
