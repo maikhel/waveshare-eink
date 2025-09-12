@@ -32,7 +32,7 @@ def run_clock():
     epd = epd7in5_V2.EPD()
     logging.debug("Initializing display")
 
-    epd.init()
+    epd.init_fast()
     epd.Clear()
 
     # Pick a font and size you like
@@ -70,6 +70,7 @@ def run_clock():
 
              # Decide refresh type
             if (datetime.now() - last_full_refresh).seconds >= 300:  # 5 minutes
+                epd.init_fast()
                 logging.info("Full refresh")
                 epd.display(epd.getbuffer(image))
                 last_full_refresh = datetime.now()
