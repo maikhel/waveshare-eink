@@ -18,6 +18,8 @@ OUT_DIR = os.path.expanduser('~/eink/logs')
 os.makedirs(OUT_DIR, exist_ok=True)
 LOG_FILE = os.path.join(OUT_DIR, 'clock.log')
 
+font = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
+
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s: %(message)s',
                     datefmt='%H:%M:%S',
@@ -45,7 +47,7 @@ def run_clock():
             logging.debug("Creating new frame")
 
             logging.debug("Drawing current date and time")
-            image = drawing.draw_date_and_time(epd.width, epd.height)
+            image = drawing.draw_date_and_time(epd.width, epd.height, font)
 
              # Decide refresh type
             if (datetime.now() - last_full_refresh).seconds >= 300:  # 5 minutes
