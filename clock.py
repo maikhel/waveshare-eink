@@ -48,6 +48,7 @@ def run_clock():
 
             logging.debug("Drawing current date and time")
             image = drawing.draw_date_and_time(epd.width, epd.height, font)
+            drawing.draw_weather_info(image, WIDTH, HEIGHT, font)
 
              # Decide refresh type
             if (datetime.now() - last_full_refresh).seconds >= 300:  # 5 minutes
