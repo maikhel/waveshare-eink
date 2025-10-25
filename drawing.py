@@ -24,59 +24,97 @@ weather_icon_mapping = {
     "50n": "wi-fog-big.png"
 }
 
+day_mapping = {
+    'Mon': 'Pon',
+    'Tue': 'Wt',
+    'Wed': 'Śr',
+    'Thu': 'Czw',
+    'Fri': 'Pt',
+    'Sat': 'Sob',
+    'Sun': 'Nie'
+}
+
 def draw_weather_info(image, full_width, full_height, font):
     # Load weather data
-    with open('data/weather.json', 'r') as f:
+    with open('example_data/weather.json', 'r') as f:
         weather = json.load(f)
 
-    # Format text
-    temp_text = f"{weather['temp']}°C"
+    current = weather['current']
+    forecast = weather['forecast']
 
-    # Get weather icon
-    icon_code = weather['icon']
+    # Draw current weather (top right)
+    temp_text = f"{current['temp']}°C"
+    icon_code = current['icon']
     icon_file = weather_icon_mapping.get(icon_code, 'wi-cloudy-big.png')
     icon_path = os.path.join('assets', 'weather', icon_file)
     icon_img = Image.open(icon_path).convert('RGBA')
-    # Composite on white background to handle transparency
     bg = Image.new('RGBA', icon_img.size, (255, 255, 255, 255))
     bg.paste(icon_img, (0, 0), icon_img)
     icon_img = bg.convert('1')
     icon_size = 64
     icon_img = icon_img.resize((icon_size, icon_size), Image.Resampling.LANCZOS)
 
-    # Use existing image draw
     draw = ImageDraw.Draw(image)
     font_small = ImageFont.truetype(font, 40)
 
-    # Calculate positions for top right: icon left of temp
     temp_bbox = draw.textbbox((0, 0), temp_text, font=font_small)
     temp_w = temp_bbox[2] - temp_bbox[0]
-    temp_h = temp_bbox[3] - temp_bbox[1]
-    total_w = icon_size + 10 + temp_w  # icon + padding + temp
-
+    total_w = icon_size + 10 + temp_w
     x_start = full_width - total_w - 20
     icon_x = x_start + 10
     temp_x = x_start + icon_size + 10
     temp_y = 20
-
-    # Center icon vertically with text
     text_center_y = temp_y + (temp_bbox[1] + temp_bbox[3]) / 2
     icon_y = int(text_center_y - icon_size / 2)
-
-    # Draw
     image.paste(icon_img, (icon_x, icon_y))
     draw.text((temp_x, temp_y), temp_text, font=font_small, fill=0)
 
+    # Draw forecast (centered at bottom)
+    forecast_y = full_height - 150
+    icon_size = 48
+    font_day = ImageFont.truetype(font, 24)
+    font_temp = ImageFont.truetype(font, 32)
+    item_width = 80
+    total_width = len(forecast) * item_width + (len(forecast) - 1) * 60
+    start_x = (full_width - total_width) // 2
+    x = start_x
+    for day in forecast:
+        day_of_week = datetime.fromisoformat(day['date']).strftime('%a')
+        day_pl = day_mapping.get(day_of_week, day_of_week)
+        # Day text
+        day_bbox = draw.textbbox((0, 0), day_pl, font=font_day)
+        day_w = day_bbox[2] - day_bbox[0]
+        day_x = x + (item_width - day_w) // 2
+        draw.text((day_x, forecast_y), day_pl, font=font_day, fill=0)
+        # Icon
+        icon_code = day['midday']['icon']
+        icon_file = weather_icon_mapping.get(icon_code, 'wi-cloudy-big.png')
+        icon_path = os.path.join('assets', 'weather', icon_file)
+        icon_img = Image.open(icon_path).convert('RGBA')
+        bg = Image.new('RGBA', icon_img.size, (255, 255, 255, 255))
+        bg.paste(icon_img, (0, 0), icon_img)
+        icon_img = bg.convert('1')
+        icon_img = icon_img.resize((icon_size, icon_size), Image.Resampling.LANCZOS)
+        icon_x = x + (item_width - icon_size) // 2
+        icon_y = forecast_y + 30
+        image.paste(icon_img, (icon_x, icon_y))
+        # Temps
+        temp_text = f"{day['midday']['temp']}° / {day['midnight']['temp']}°"
+        temp_bbox = draw.textbbox((0, 0), temp_text, font=font_temp)
+        temp_w = temp_bbox[2] - temp_bbox[0]
+        temp_x = x + (item_width - temp_w) // 2
+        temp_y = icon_y + icon_size + 10
+        draw.text((temp_x, temp_y), temp_text, font=font_temp, fill=0)
+        x += item_width + 60
+
 def draw_date_and_time(full_width, full_height, font):
     font_big = ImageFont.truetype(font, 120)
-    font_small = ImageFont.truetype(font, 40)
 
     image = Image.new('1', (full_width, full_height), 255)
     draw = ImageDraw.Draw(image)
 
     now = datetime.now() + timedelta(minutes=1)
     time_str = now.strftime("%H:%M")
-    date_str = now.strftime("%d.%m.%Y")
 
     # --- Time ---
     bbox = draw.textbbox((0, 0), time_str, font=font_big)
@@ -93,12 +131,5 @@ def draw_date_and_time(full_width, full_height, font):
     draw.rectangle([border_x1, border_y1, border_x2, border_y2], outline=0, width=3)
 
     draw.text((time_x, time_y), time_str, font=font_big, fill=0)
-
-    # --- Date ---
-    bbox_date = draw.textbbox((0, 0), date_str, font=font_small)
-    dw, dh = bbox_date[2] - bbox_date[0], bbox_date[3] - bbox_date[1]
-    date_x = (full_width - dw) // 2
-    date_y = full_height - dh - 20
-    draw.text((date_x, date_y), date_str, font=font_small, fill=0)
 
     return image

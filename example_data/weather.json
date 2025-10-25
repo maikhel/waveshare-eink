@@ -1,6 +1,64 @@
 {
-  "last_updated": "2025-10-19T22:24:56",
-  "temp": 4,
-  "description": "mg\u0142a",
-  "icon": "50n"
+  "current": {
+    "temp": 10,
+    "description": "zachmurzenie ma\u0142e",
+    "icon": "03n"
+  },
+  "forecast": [
+    {
+      "date": "2025-10-26",
+      "midday": {
+        "temp": 12,
+        "icon": "04d"
+      },
+      "midnight": {
+        "temp": 10,
+        "icon": "10n"
+      }
+    },
+    {
+      "date": "2025-10-27",
+      "midday": {
+        "temp": 8,
+        "icon": "04d"
+      },
+      "midnight": {
+        "temp": 7,
+        "icon": "10n"
+      }
+    },
+    {
+      "date": "2025-10-28",
+      "midday": {
+        "temp": 7,
+        "icon": "10d"
+      },
+      "midnight": {
+        "temp": 7,
+        "icon": "10n"
+      }
+    },
+    {
+      "date": "2025-10-29",
+      "midday": {
+        "temp": 11,
+        "icon": "10d"
+      },
+      "midnight": {
+        "temp": 7,
+        "icon": "04n"
+      }
+    },
+    {
+      "date": "2025-10-30",
+      "midday": {
+        "temp": 13,
+        "icon": "04d"
+      },
+      "midnight": {
+        "temp": 8,
+        "icon": "04n"
+      }
+    }
+  ]
 }
