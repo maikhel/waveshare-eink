@@ -111,6 +111,55 @@ def draw_weather_info(image, full_width, full_height, font):
             draw.line([line_x, forecast_y, line_x, forecast_y + 120], fill=0, width=1)
         x += item_width + 60
 
+def draw_steam_friends(image, font):
+    try:
+        with open('data/steam.json', 'r') as f:
+            steam_data = json.load(f)
+    except FileNotFoundError:
+        return  # Skip if no data
+
+    statuses = steam_data.get('statuses', {})
+    draw = ImageDraw.Draw(image)
+    font_small = ImageFont.truetype(font, 20)
+
+    # Load Steam icon
+    icon_path = os.path.join('assets', 'steam', 'icon.png')
+    icon_img = Image.open(icon_path).convert('RGBA')
+
+    # Convert to 1-bit like weather icons
+    bg = Image.new('RGBA', icon_img.size, (255, 255, 255, 255))
+    bg.paste(icon_img, (0, 0), icon_img)
+    icon_img = bg.convert('1')
+
+    # Position icon at top-left
+    icon_x = 20
+    icon_y = 20
+    image.paste(icon_img, (icon_x, icon_y))
+
+    # Position text next to icon
+    text_x = icon_x + 64 + 10
+    text_y = icon_y + 10
+    line_height = 25
+
+    online_friends = []
+    for steamid, status in statuses.items():
+        personastate = status.get('personastate', 0)
+        if personastate > 0:  # Online
+            nickname = status.get('personaname', 'Unknown')
+            game = status.get('gameextrainfo')
+            if game:
+                text = f"{nickname} plays {game}"
+            else:
+                text = f"{nickname} is online"
+            online_friends.append(text)
+
+    if online_friends:
+        for text in online_friends:
+            draw.text((text_x, text_y), text, font=font_small, fill=0)
+            text_y += line_height
+    else:
+        draw.text((text_x, text_y), "Noone is having fun on Steam", font=font_small, fill=0)
+
 def draw_date_and_time(full_width, full_height, font):
     font_big = ImageFont.truetype(font, 120)
 
