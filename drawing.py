@@ -158,7 +158,7 @@ def draw_steam_friends(image, font):
             draw.text((text_x, text_y), text, font=font_small, fill=0)
             text_y += line_height
     else:
-        draw.text((text_x, text_y), "Noone is having fun on Steam", font=font_small, fill=0)
+        draw.text((text_x, text_y), "No one’s online.", font=font_small, fill=0)
 
 def draw_date_and_time(full_width, full_height, font):
     font_big = ImageFont.truetype(font, 120)
