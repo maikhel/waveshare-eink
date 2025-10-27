@@ -45,7 +45,7 @@ def draw_weather_info(image, full_width, full_height, font):
     # Draw current weather (top right)
     temp_text = f"{current['temp']}°C"
     icon_code = current['icon']
-    icon_file = weather_icon_mapping.get(icon_code, 'wi-cloudy-big.png')
+    icon_file = weather_icon_mapping.get(icon_code, 'wi-alien-big.png')
     icon_path = os.path.join('assets', 'weather', icon_file)
     icon_img = Image.open(icon_path).convert('RGBA')
     bg = Image.new('RGBA', icon_img.size, (255, 255, 255, 255))
@@ -88,7 +88,7 @@ def draw_weather_info(image, full_width, full_height, font):
         draw.text((day_x, forecast_y), day_pl, font=font_day, fill=0)
         # Icon
         icon_code = day['midday']['icon']
-        icon_file = weather_icon_mapping.get(icon_code, 'wi-cloudy-big.png')
+        icon_file = weather_icon_mapping.get(icon_code, 'wi-alien-big.png')
         icon_path = os.path.join('assets', 'weather', icon_file)
         icon_img = Image.open(icon_path).convert('RGBA')
         bg = Image.new('RGBA', icon_img.size, (255, 255, 255, 255))
@@ -99,7 +99,7 @@ def draw_weather_info(image, full_width, full_height, font):
         icon_y = forecast_y + 30
         image.paste(icon_img, (icon_x, icon_y))
         # Temps
-        temp_text = f"{day['midday']['temp']}° / {day['midnight']['temp']}°"
+        temp_text = f"{day['midday']['temp']}°/{day['midnight']['temp']}°"
         temp_bbox = draw.textbbox((0, 0), temp_text, font=font_temp)
         temp_w = temp_bbox[2] - temp_bbox[0]
         temp_x = x + (item_width - temp_w) // 2
