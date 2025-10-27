@@ -74,7 +74,7 @@ def draw_weather_info(image, full_width, full_height, font):
     icon_size = 48
     font_day = ImageFont.truetype(font, 24)
     font_temp = ImageFont.truetype(font, 32)
-    item_width = 80
+    item_width = 100
     total_width = len(forecast) * item_width + (len(forecast) - 1) * 60
     start_x = (full_width - total_width) // 2
     x = start_x
