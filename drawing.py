@@ -36,7 +36,7 @@ day_mapping = {
 
 def draw_weather_info(image, full_width, full_height, font):
     # Load weather data
-    with open('example_data/weather.json', 'r') as f:
+    with open('data/weather.json', 'r') as f:
         weather = json.load(f)
 
     current = weather['current']
