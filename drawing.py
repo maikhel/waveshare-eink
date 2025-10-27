@@ -78,7 +78,7 @@ def draw_weather_info(image, full_width, full_height, font):
     total_width = len(forecast) * item_width + (len(forecast) - 1) * 60
     start_x = (full_width - total_width) // 2
     x = start_x
-    for day in forecast:
+    for i, day in enumerate(forecast):
         day_of_week = datetime.fromisoformat(day['date']).strftime('%a')
         day_pl = day_mapping.get(day_of_week, day_of_week)
         # Day text
@@ -105,6 +105,10 @@ def draw_weather_info(image, full_width, full_height, font):
         temp_x = x + (item_width - temp_w) // 2
         temp_y = icon_y + icon_size + 10
         draw.text((temp_x, temp_y), temp_text, font=font_temp, fill=0)
+        # Draw vertical line between entries (except after last)
+        if i < len(forecast) - 1:
+            line_x = x + item_width + 30
+            draw.line([line_x, forecast_y, line_x, forecast_y + 120], fill=0, width=1)
         x += item_width + 60
 
 def draw_date_and_time(full_width, full_height, font):
