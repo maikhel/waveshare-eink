@@ -42,12 +42,12 @@ def fetch_weather():
         dt = datetime.fromisoformat(item['dt_txt'])
         date_str = dt.date().isoformat()
         hour = dt.hour
-        if hour == 12:  # Midday
+        if hour == 15:  # Midday
             grouped[date_str]['midday'] = {
                 'temp': round(item['main']['temp']),
                 'icon': item['weather'][0]['icon']
             }
-        elif hour == 0:  # Midnight
+        elif hour == 3:  # usually the coolest time
             grouped[date_str]['midnight'] = {
                 'temp': round(item['main']['temp']),
                 'icon': item['weather'][0]['icon']
