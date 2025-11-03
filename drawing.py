@@ -160,6 +160,53 @@ def draw_steam_friends(image, font):
     else:
         draw.text((text_x, text_y), "No one’s online.", font=font_small, fill=0)
 
+def draw_github_info(image, font):
+    try:
+        with open('data/github.json', 'r') as f:
+            github_data = json.load(f)
+    except FileNotFoundError:
+        return  # Skip if no data
+
+    draw = ImageDraw.Draw(image)
+    font_small = ImageFont.truetype(font, 20)
+
+    # Load GitHub icon
+    icon_path = os.path.join('assets', 'github', 'icon.png')
+    icon_img = Image.open(icon_path).convert('RGBA')
+
+    # Convert to 1-bit like weather icons
+    bg = Image.new('RGBA', icon_img.size, (255, 255, 255, 255))
+    bg.paste(icon_img, (0, 0), icon_img)
+    icon_img = bg.convert('1')
+
+    # Top left corner
+    icon_x = 20
+    icon_y = 20
+    image.paste(icon_img, (icon_x, icon_y))
+
+    # Position text next to icon
+    text_x = icon_x + 64 + 10
+    text_y = icon_y + 10
+    line_height = 25
+
+    opened_prs = github_data.get('opened_prs', 0)
+    review_prs = github_data.get('prs_for_review', 0)
+
+    # Draw opened PRs info
+    if opened_prs > 0:
+        text = f"PRs created: {opened_prs}"
+    else:
+        text = "No PRs to worry about!"
+    draw.text((text_x, text_y), text, font=font_small, fill=0)
+    text_y += line_height
+
+    # Draw PRs for review info
+    if review_prs > 0:
+        text = f"PRs to review: {review_prs}"
+    else:
+        text = "No PRs to review"
+    draw.text((text_x, text_y), text, font=font_small, fill=0)
+
 def draw_date_and_time(full_width, full_height, font):
     font_big = ImageFont.truetype(font, 120)
 
