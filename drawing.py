@@ -34,6 +34,16 @@ day_mapping = {
     'Sun': 'Nie'
 }
 
+def draw_steam_or_github(image, font):
+    now = datetime.now()
+    is_weekday = now.weekday() < 5
+    is_work_time = 7 <= now.hour < 18 # between 7.00 and 18.00
+
+    if is_work_time and is_weekday:
+        draw_github_info(image, font)
+    else:
+        draw_steam_friends(image, font)
+
 def draw_weather_info(image, full_width, full_height, font):
     # Load weather data
     with open('data/weather.json', 'r') as f:
