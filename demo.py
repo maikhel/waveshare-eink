@@ -8,8 +8,7 @@ def draw_demo():
     font = "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
     image = drawing.draw_date_and_time(WIDTH, HEIGHT, font)
     drawing.draw_weather_info(image, WIDTH, HEIGHT, font)
-    # drawing.draw_steam_friends(image, font)
-    drawing.draw_github_info(image, font)
+    drawing.draw_steam_or_github(image, font)
 
     image.show()
     image.save("preview.png")
