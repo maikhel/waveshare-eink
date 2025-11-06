@@ -212,6 +212,7 @@ def draw_github_info(image, font):
         text_y += line_height
 
     # Draw PRs to review info below GitHub icon
+    text_y = max(text_y, icon_y + 64 + 10)
     if review_prs > 0:
         pr_text = f"{review_prs} PRs to review"
         draw.text((icon_x, text_y), pr_text, font=font_small, fill=0)
