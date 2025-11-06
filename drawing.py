@@ -197,33 +197,26 @@ def draw_github_info(image, font):
 
     # Position text next to icon
     text_x = icon_x + 64 + 10
-    text_y = icon_y + 10
+    text_y = icon_y
     line_height = 25
 
     opened_prs = github_data.get('opened_prs', [])
     review_prs = github_data.get('prs_for_review', 0)
 
-    # Draw PRs to review count first
-    if review_prs > 0:
-        draw.text((text_x, text_y), str(review_prs), font=font_review, fill=0)
-        number_bbox = draw.textbbox((text_x, text_y), str(review_prs), font=font_review)
-        text_x_after_number = number_bbox[2]
-        small_text_bbox = draw.textbbox((0, 0), " PRs to review", font=font_small)
-        text_y_aligned = text_y + (number_bbox[3] - number_bbox[1]) - (small_text_bbox[3] - small_text_bbox[1])
-        draw.text((text_x_after_number, text_y_aligned), " PRs to review", font=font_small, fill=0)
-    else:
-        draw.text((text_x, text_y), "No PRs to review :)", font=font_small, fill=0)
-
-    # Move to next line for PR list
-    text_y = icon_y + 64 + 10
-
-    # Draw list of opened PRs
-    for pr in opened_prs:
+    # Draw list of opened PRs to the right of GitHub icon (max 3 items)
+    for pr in opened_prs[:3]:
         title = pr.get('title', 'No title')[:10]  # Take only first 10 letters
         state = 'draft' if pr.get('draft', False) else pr.get('state', 'unknown')
         pr_text = f"{title} - {state}"
-        draw.text((icon_x, text_y), pr_text, font=font_small, fill=0)
+        draw.text((text_x, text_y), pr_text, font=font_small, fill=0)
         text_y += line_height
+
+    # Draw PRs to review info below GitHub icon
+    if review_prs > 0:
+        pr_text = f"{review_prs} PRs to review"
+        draw.text((icon_x, text_y), pr_text, font=font_small, fill=0)
+    else:
+        draw.text((icon_x, text_y), "No PRs to review :)", font=font_small, fill=0)
 
 def draw_date_and_time(full_width, full_height, font):
     font_big = ImageFont.truetype(font, 120)
