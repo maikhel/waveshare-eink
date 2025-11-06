@@ -179,6 +179,7 @@ def draw_github_info(image, font):
 
     draw = ImageDraw.Draw(image)
     font_small = ImageFont.truetype(font, 20)
+    font_review = ImageFont.truetype(font, 40)
 
     # Load GitHub icon
     icon_path = os.path.join('assets', 'github', 'icon.png')
@@ -199,23 +200,17 @@ def draw_github_info(image, font):
     text_y = icon_y + 10
     line_height = 25
 
-    opened_prs = github_data.get('opened_prs', 0)
     review_prs = github_data.get('prs_for_review', 0)
 
-    # Draw opened PRs info
-    if opened_prs > 0:
-        text = f"PRs created: {opened_prs}"
-    else:
-        text = "No PRs to worry about!"
-    draw.text((text_x, text_y), text, font=font_small, fill=0)
-    text_y += line_height
-
-    # Draw PRs for review info
     if review_prs > 0:
-        text = f"PRs to review: {review_prs}"
+        draw.text((text_x, text_y), str(review_prs), font=font_review, fill=0)
+        number_bbox = draw.textbbox((text_x, text_y), str(review_prs), font=font_review)
+        text_x_after_number = number_bbox[2]
+        small_text_bbox = draw.textbbox((0, 0), " PRs to review", font=font_small)
+        text_y_aligned = text_y + (number_bbox[3] - number_bbox[1]) - (small_text_bbox[3] - small_text_bbox[1])
+        draw.text((text_x_after_number, text_y_aligned), " PRs to review", font=font_small, fill=0)
     else:
-        text = "No PRs to review"
-    draw.text((text_x, text_y), text, font=font_small, fill=0)
+        draw.text((text_x, text_y), "No PRs to review :)", font=font_small, fill=0)
 
 def draw_date_and_time(full_width, full_height, font):
     font_big = ImageFont.truetype(font, 120)
