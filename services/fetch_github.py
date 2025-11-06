@@ -21,13 +21,25 @@ def fetch_github():
     }
 
     created_url = f"https://api.github.com/search/issues?q=type:pr+author:{USERNAME}+is:open+repo:{REPO}"
-    opened_prs_count = requests.get(created_url, headers=headers).json().get("total_count", 0)
+    created_response = requests.get(created_url, headers=headers)
+    created_response.raise_for_status()
+    items = created_response.json().get("items", [])
+    
+    # Extract only the required fields
+    opened_prs_data = []
+    for item in items:
+        pr_info = {
+            'title': item['title'],
+            'state': item['state'],
+            'draft': item.get('draft', False)
+        }
+        opened_prs_data.append(pr_info)
 
     review_url = f"https://api.github.com/search/issues?q=type:pr+review-requested:{USERNAME}+is:open"
     review_prs_count = requests.get(review_url, headers=headers).json().get("total_count", 0)
 
     github_info = {
-        'opened_prs': opened_prs_count,
+        'opened_prs': opened_prs_data,
         'prs_for_review': review_prs_count,
         'last_updated': datetime.now(timezone.utc).isoformat()
     }
