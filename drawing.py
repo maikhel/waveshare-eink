@@ -200,8 +200,10 @@ def draw_github_info(image, font):
     text_y = icon_y + 10
     line_height = 25
 
+    opened_prs = github_data.get('opened_prs', [])
     review_prs = github_data.get('prs_for_review', 0)
 
+    # Draw PRs to review count first
     if review_prs > 0:
         draw.text((text_x, text_y), str(review_prs), font=font_review, fill=0)
         number_bbox = draw.textbbox((text_x, text_y), str(review_prs), font=font_review)
@@ -211,6 +213,17 @@ def draw_github_info(image, font):
         draw.text((text_x_after_number, text_y_aligned), " PRs to review", font=font_small, fill=0)
     else:
         draw.text((text_x, text_y), "No PRs to review :)", font=font_small, fill=0)
+
+    # Move to next line for PR list
+    text_y = icon_y + 64 + 10
+
+    # Draw list of opened PRs
+    for pr in opened_prs:
+        title = pr.get('title', 'No title')[:10]  # Take only first 10 letters
+        state = 'draft' if pr.get('draft', False) else pr.get('state', 'unknown')
+        pr_text = f"{title} - {state}"
+        draw.text((icon_x, text_y), pr_text, font=font_small, fill=0)
+        text_y += line_height
 
 def draw_date_and_time(full_width, full_height, font):
     font_big = ImageFont.truetype(font, 120)
