@@ -158,7 +158,11 @@ def draw_steam_friends(image, font):
             nickname = status.get('personaname', 'Unknown')
             game = status.get('gameextrainfo')
             if game:
-                text = f"{nickname} plays {game}"
+                if len(game) > 25:
+                    game_short = game[:25] + "..."
+                else:
+                    game_short = game
+                text = f"{nickname} plays {game_short}"
             else:
                 text = f"{nickname} is online"
             online_friends.append(text)
