@@ -1,6 +1,7 @@
 /logs/*
-__pycache__/*
-preview.png
+__pycache__/
+/preview.png
 .env
 /data/*
 .pnpm-debug.log
+.DS_Store
