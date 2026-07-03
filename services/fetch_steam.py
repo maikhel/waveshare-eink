@@ -1,18 +1,9 @@
 import os
+import sys
 import requests
 import json
 from datetime import datetime, timezone
 from dotenv import load_dotenv
-
-MY_STEAM_ID = "76561198074362405"
-FRIEND_IDS = [
-        "76561198000000001", # Friend1
-        "76561198000000002", # Friend2
-        "76561198000000003", # Friend3
-        "76561198000000004", # Friend4
-        "76561198000000005", # Friend5
-        MY_STEAM_ID
-        ]
 
 load_dotenv()
 
@@ -21,7 +12,11 @@ def get_friends_status():
     if not api_key:
         raise ValueError("STEAM_API_KEY not set")
 
-    steamids = ",".join(FRIEND_IDS)
+    friend_ids = os.getenv('STEAM_FRIEND_IDS')
+    if not friend_ids:
+        raise ValueError("STEAM_FRIEND_IDS not set")
+
+    steamids = ",".join(id.strip() for id in friend_ids.split(","))
     url = f"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={api_key}&steamids={steamids}"
     response = requests.get(url)
     response.raise_for_status()
