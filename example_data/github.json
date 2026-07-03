@@ -1,5 +1,16 @@
 {
-  "opened_prs": 1,
+  "opened_prs": [
+    {
+      "title": "Add new feature",
+      "state": "open",
+      "draft": false
+    },
+    {
+      "title": "Fix authentication bug",
+      "state": "open",
+      "draft": true
+    }
+  ],
   "prs_for_review": 4,
   "last_updated": "2025-11-03T20:16:56.692417+00:00"
 }
