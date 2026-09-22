@@ -94,7 +94,15 @@ def run_clock():
                         f"{source} {describe_age(ctx.age(source))}"
                         for source in slide.screen.requires)
                     logging.info("Showing screen: %s (%s)", slide.entry.id, ages)
-            image = render.draw(ctx, epd.width, epd.height, slide, config)
+            try:
+                image = render.draw(ctx, epd.width, epd.height, slide, config)
+            except Exception:
+                # One screen tripping over unexpected data should not take the
+                # display down; leave the current frame up and try again later.
+                logging.error("Failed to render %s, skipping this tick",
+                              slide.entry.id if slide.entry else "screen", exc_info=True)
+                time.sleep(config.tick_seconds)
+                continue
 
             buf = epd.getbuffer(image)
 
