@@ -30,10 +30,9 @@ class SteamScreen(Screen):
     requires = ('steam',)
 
     def available(self, ctx):
-        steam = ctx.load('steam')
-        if steam is None:
-            return False
-        return bool(online_friends(steam) or steam.get('recent'))
+        # "No one is online" is itself worth showing, so the screen stays in the
+        # rotation whenever the data file is readable.
+        return ctx.load('steam') is not None
 
     def render(self, canvas, rect, ctx):
         steam = ctx.load('steam')
@@ -43,24 +42,19 @@ class SteamScreen(Screen):
         body = Rect(rect.x + theme.MARGIN, rect.y + 10,
                     rect.w - 2 * theme.MARGIN, rect.h - 20)
 
-        friends = online_friends(steam)
-        recent = steam.get('recent', [])
-
-        # Bands collapse when empty rather than leaving a stranded heading.
-        if friends and recent:
-            top, bottom = body.split_top(ONLINE_BAND_HEIGHT)
-        elif friends:
-            top, bottom = body, None
-        else:
-            top, bottom = None, body
-
-        if top is not None:
-            self._draw_online(canvas, top, friends)
-        if bottom is not None:
-            self._draw_recent(canvas, bottom, recent)
+        # Both bands always render, so the layout does not jump between
+        # rotations as friends come and go.
+        top, bottom = body.split_top(ONLINE_BAND_HEIGHT)
+        self._draw_online(canvas, top, online_friends(steam))
+        self._draw_recent(canvas, bottom, steam.get('recent', []))
 
     def _draw_online(self, canvas, rect, friends):
-        rows = widgets.section_header(canvas, rect, "PLAYING NOW", len(friends))
+        rows = widgets.section_header(canvas, rect, "PLAYING NOW", len(friends),
+                                      icon=('steam', 'icon.png'))
+        if not friends:
+            canvas.text((rows.x, rows.y), "No one is online.", theme.LIST)
+            return
+
         for name, game, row in self._rows(rows, friends):
             canvas.text((row.x, row.y), canvas.fit_text(name, theme.LIST, NAME_WIDTH - 10),
                         theme.LIST)

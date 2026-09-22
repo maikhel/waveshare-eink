@@ -4,11 +4,25 @@ from .layout import Rect
 
 HEADER_HEIGHT = 46
 RULE_OFFSET = 34
+ICON_GAP = 10
 
 
-def section_header(canvas, rect, title, count=None):
-    """Draw a centred band heading with an optional count, and return the rect below."""
-    canvas.text_centered(rect, rect.y, title, theme.SECTION)
+def section_header(canvas, rect, title, count=None, icon=None, icon_size=28):
+    """Draw a centred band heading with an optional count, and return the rect below.
+
+    An `icon` is centred together with the title as one group, so the pair stays
+    balanced whatever the heading says.
+    """
+    title_w = canvas.text_width(title, theme.SECTION)
+    group_w = title_w + (icon_size + ICON_GAP if icon else 0)
+    x = rect.center_x_for(group_w)
+
+    if icon:
+        canvas.paste(canvas.icon(*icon, size=icon_size), (x, rect.y - 4))
+        x += icon_size + ICON_GAP
+
+    canvas.text((x, rect.y), title, theme.SECTION)
+
     if count is not None:
         canvas.text_right(rect, rect.y + 2, str(count), theme.COUNT)
 

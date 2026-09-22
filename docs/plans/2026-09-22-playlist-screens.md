@@ -251,18 +251,18 @@ humidity.
 
 ### Steam
 
-Two bands, each collapsing when empty so no heading is left stranded:
+Two bands, both always drawn so the layout does not shift between rotations:
 
-1. **Friends online now** — nickname and game, with room for the full title
-   rather than clipping at 25 characters.
+1. **Friends online now** — the Steam logo beside the heading, then nickname and
+   game. Falls back to "No one is online." rather than collapsing: that absence
+   is information too, and a missing band reads as a broken fetcher.
 2. **My recent playtime** — `GetRecentlyPlayedGames`, last two weeks.
 
 **The wishlist band was dropped.** It was the only undocumented endpoint in the
 project and had broken before; the screen is better without that failure mode.
 
-Because the recent-playtime band has content even when nobody is online, this
-screen no longer drops out of the rotation as often as it did. `available()` is
-now "either band has something".
+`available()` is simply "the data file is readable" — the screen always has
+something to say, so it stays in the rotation.
 
 ### Extra
 
