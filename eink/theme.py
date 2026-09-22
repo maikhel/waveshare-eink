@@ -13,7 +13,7 @@ FONT_CANDIDATES = [
 ]
 
 # Type scale
-SECTION = 18          # small caps-ish band headings
+SECTION = 24          # band headings
 HERO_TEMP = 64
 HERO_DESC = 22
 DETAIL = 20
@@ -23,7 +23,7 @@ POP = 16
 GRAPH_LABEL = 15
 LIST = 21
 LIST_META = 17
-COUNT = 28
+COUNT = 26
 TIME = 120
 CURRENT_TEMP = 40
 FORECAST_DAY = 24

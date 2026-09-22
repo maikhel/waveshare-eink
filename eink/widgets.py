@@ -2,15 +2,15 @@
 from . import theme
 from .layout import Rect
 
-HEADER_HEIGHT = 34
-RULE_OFFSET = 26
+HEADER_HEIGHT = 46
+RULE_OFFSET = 34
 
 
 def section_header(canvas, rect, title, count=None):
-    """Draw a band heading with an optional count, and return the rect below it."""
-    canvas.text((rect.x, rect.y), title, theme.SECTION)
+    """Draw a centred band heading with an optional count, and return the rect below."""
+    canvas.text_centered(rect, rect.y, title, theme.SECTION)
     if count is not None:
-        canvas.text_right(rect, rect.y - 4, str(count), theme.COUNT)
+        canvas.text_right(rect, rect.y + 2, str(count), theme.COUNT)
 
     y = rect.y + RULE_OFFSET
     canvas.line([rect.x, y, rect.right, y])

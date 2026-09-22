@@ -5,8 +5,8 @@ from ..layout import Rect
 
 COLUMN_GAP = 30
 MARKER_WIDTH = 20
-ROW_HEIGHT = 50
-META_OFFSET = 25
+ROW_HEIGHT = 62
+META_OFFSET = 26
 
 # reviewDecision -> (marker shape, label). None means nobody has looked yet.
 REVIEW_STATES = {
