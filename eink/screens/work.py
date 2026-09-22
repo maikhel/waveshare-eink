@@ -4,16 +4,16 @@ from .. import theme, widgets
 from ..layout import Rect
 
 COLUMN_GAP = 30
-MARKER_WIDTH = 20
+MARKER_WIDTH = 26
 ROW_HEIGHT = 62
 META_OFFSET = 26
 
 # reviewDecision -> (marker shape, label). None means nobody has looked yet.
 REVIEW_STATES = {
-    'APPROVED': ('filled', 'approved'),
-    'CHANGES_REQUESTED': ('triangle', 'changes requested'),
-    'REVIEW_REQUIRED': ('hollow', 'review required'),
-    None: ('hollow', 'review required'),
+    'APPROVED': ('check', 'approved'),
+    'CHANGES_REQUESTED': ('bang', 'changes requested'),
+    'REVIEW_REQUIRED': ('circle', 'review required'),
+    None: ('circle', 'review required'),
 }
 
 DRAFT_STATE = ('square', 'draft')
@@ -60,7 +60,7 @@ class WorkScreen(Screen):
             shape, label = DRAFT_STATE if pr.get('draft') else \
                 REVIEW_STATES.get(pr.get('review'), REVIEW_STATES[None])
 
-            widgets.marker(canvas, row.x, row.y + 5, shape)
+            widgets.marker(canvas, row.x, row.y + 4, shape)
             title_x = row.x + MARKER_WIDTH
             title_width = row.w - MARKER_WIDTH
             canvas.text((title_x, row.y),
