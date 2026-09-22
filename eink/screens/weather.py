@@ -65,7 +65,9 @@ class WeatherScreen(Screen):
         left, right = top.split_left(LEFT_WIDTH)
         right = Rect(right.x + COLUMN_GAP, right.y, right.w - COLUMN_GAP, right.h)
 
-        self._draw_current(canvas, left, weather['current'])
+        current = weather.get('current')
+        if current:
+            self._draw_current(canvas, left, current)
 
         hourly = weather.get('hourly') or []
         if len(hourly) >= 2:
@@ -78,9 +80,9 @@ class WeatherScreen(Screen):
     def _draw_current(self, canvas, rect, current):
         """Icon and temperature, the description, then a list of details."""
         icon_y = rect.y + 2
-        canvas.paste(_icon(canvas, current['icon'], theme.ICON_HERO), (rect.x, icon_y))
+        canvas.paste(_icon(canvas, current.get('icon'), theme.ICON_HERO), (rect.x, icon_y))
 
-        temp_text = f"{current['temp']}°"
+        temp_text = f"{current.get('temp', '--')}°"
         temp_bbox = canvas.text_bbox(temp_text, theme.HERO_TEMP)
         temp_x = rect.x + theme.ICON_HERO + 10
         temp_y = icon_y + (theme.ICON_HERO - (temp_bbox[3] - temp_bbox[1])) // 2 - temp_bbox[1]
@@ -92,12 +94,17 @@ class WeatherScreen(Screen):
                         canvas.fit_text(description.capitalize(), theme.HERO_DESC, rect.w),
                         theme.HERO_DESC)
 
-        rows = [
-            ("Feels like", f"{current['feels_like']}°"),
-            ("Humidity", f"{current['humidity']}%"),
-            ("Sunrise", current.get('sunrise', '--:--')),
-            ("Sunset", current.get('sunset', '--:--')),
-        ]
+        # Built from what is present: a file written before these fields
+        # existed still renders, just with fewer rows.
+        rows = []
+        if current.get('feels_like') is not None:
+            rows.append(("Feels like", f"{current['feels_like']}°"))
+        if current.get('humidity') is not None:
+            rows.append(("Humidity", f"{current['humidity']}%"))
+        if current.get('sunrise'):
+            rows.append(("Sunrise", current['sunrise']))
+        if current.get('sunset'):
+            rows.append(("Sunset", current['sunset']))
         y = rect.y + 160
         for label, value in rows:
             canvas.text((rect.x, y), label, theme.DETAIL)
