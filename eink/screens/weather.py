@@ -1,8 +1,8 @@
-"""Weather: current conditions, the next few hours, and the coming days."""
+"""Weather: current conditions, a temperature curve for the day, and the week."""
 from datetime import datetime
 
 from .base import Screen
-from .. import theme
+from .. import theme, widgets
 from ..dates import day_abbr
 from ..layout import Rect
 
@@ -32,9 +32,15 @@ UNKNOWN_ICON = 'wi-alien-big.png'
 # Below this, printing a percentage costs more attention than it repays.
 POP_THRESHOLD = 20
 
-HERO_HEIGHT = 150
-HOURLY_HEIGHT = 116
-BAND_GAP = 8
+DAILY_HEIGHT = 158
+LEFT_WIDTH = 330
+COLUMN_GAP = 24
+
+# Graph geometry
+GRAPH_TOP_PAD = 22      # room for the temperature labels above the curve
+GRAPH_BOTTOM_PAD = 26   # room for the hour labels under the axis
+GRAPH_SIDE_PAD = 20
+POINT_RADIUS = 3
 
 
 def _icon(canvas, code, size):
@@ -55,69 +61,87 @@ class WeatherScreen(Screen):
             return
 
         body = Rect(rect.x + theme.MARGIN, rect.y, rect.w - 2 * theme.MARGIN, rect.h)
-        hero, rest = body.split_top(HERO_HEIGHT)
-        hourly, daily = rest.split_top(HOURLY_HEIGHT)
+        top, daily = body.split_bottom(DAILY_HEIGHT)
+        left, right = top.split_left(LEFT_WIDTH)
+        right = Rect(right.x + COLUMN_GAP, right.y, right.w - COLUMN_GAP, right.h)
 
-        self._draw_hero(canvas, hero, weather['current'])
+        self._draw_current(canvas, left, weather['current'])
 
-        if weather.get('hourly'):
-            canvas.line([body.x, hourly.y, body.right, hourly.y])
-            self._draw_hourly(canvas, hourly, weather['hourly'])
+        hourly = weather.get('hourly') or []
+        if len(hourly) >= 2:
+            self._draw_graph(canvas, right, hourly)
 
         if weather.get('forecast'):
             canvas.line([body.x, daily.y, body.right, daily.y])
             self._draw_daily(canvas, daily, weather['forecast'])
 
-    def _draw_hero(self, canvas, rect, current):
-        """Big icon and temperature on the left, a rail of details on the right."""
-        left, right = rect.split_left(380)
-
-        icon_y = rect.y + 6
-        canvas.paste(_icon(canvas, current['icon'], theme.ICON_HERO), (left.x, icon_y))
+    def _draw_current(self, canvas, rect, current):
+        """Icon and temperature, the description, then a list of details."""
+        icon_y = rect.y + 2
+        canvas.paste(_icon(canvas, current['icon'], theme.ICON_HERO), (rect.x, icon_y))
 
         temp_text = f"{current['temp']}°"
         temp_bbox = canvas.text_bbox(temp_text, theme.HERO_TEMP)
-        temp_x = left.x + theme.ICON_HERO + 12
+        temp_x = rect.x + theme.ICON_HERO + 10
         temp_y = icon_y + (theme.ICON_HERO - (temp_bbox[3] - temp_bbox[1])) // 2 - temp_bbox[1]
         canvas.text((temp_x, temp_y), temp_text, theme.HERO_TEMP)
 
         description = current.get('description', '')
         if description:
-            available = left.w - theme.ICON_HERO - 12
-            canvas.text((temp_x, icon_y + theme.ICON_HERO - 34),
-                        canvas.fit_text(description.capitalize(), theme.HERO_DESC, available),
+            canvas.text((rect.x, rect.y + 130),
+                        canvas.fit_text(description.capitalize(), theme.HERO_DESC, rect.w),
                         theme.HERO_DESC)
 
         rows = [
-            ("Odczuwalna", f"{current['feels_like']}°"),
-            ("Wilgotność", f"{current['humidity']}%"),
-            ("Wschód", current.get('sunrise', '--:--')),
-            ("Zachód", current.get('sunset', '--:--')),
+            ("Feels like", f"{current['feels_like']}°"),
+            ("Humidity", f"{current['humidity']}%"),
+            ("Sunrise", current.get('sunrise', '--:--')),
+            ("Sunset", current.get('sunset', '--:--')),
         ]
-        y = rect.y + 14
+        y = rect.y + 160
         for label, value in rows:
-            canvas.text((right.x, y), label, theme.DETAIL)
-            canvas.text_right(right, y, value, theme.DETAIL)
-            y += 33
+            canvas.text((rect.x, y), label, theme.DETAIL)
+            canvas.text_right(rect, y, value, theme.DETAIL)
+            y += 25
 
-    def _draw_hourly(self, canvas, rect, hourly):
-        """The next few 3-hourly steps."""
-        for column, step in zip(rect.columns(len(hourly)), hourly):
-            canvas.text_centered(column, rect.y + 4, step['time'], theme.HOUR_LABEL)
-            canvas.paste(_icon(canvas, step['icon'], theme.ICON_HOUR),
-                         (column.center_x_for(theme.ICON_HOUR), rect.y + 22))
+    def _draw_graph(self, canvas, rect, hourly):
+        """Temperature over the coming day, as a simple line chart."""
+        plot = widgets.section_header(canvas, rect, "NEXT 24H")
 
-            canvas.text_centered(column, rect.y + 64, f"{step['temp']}°", theme.HOUR_TEMP)
+        temps = [step['temp'] for step in hourly]
+        low, high = min(temps), max(temps)
+        span = high - low or 1  # a flat day would divide by zero
 
-            pop = _pop_label(step.get('pop'))
-            if pop:
-                canvas.text_centered(column, rect.y + 94, pop, theme.POP)
+        top = plot.y + GRAPH_TOP_PAD
+        bottom = plot.bottom - GRAPH_BOTTOM_PAD
+        left = plot.x + GRAPH_SIDE_PAD
+        step_x = (plot.w - 2 * GRAPH_SIDE_PAD) / (len(hourly) - 1)
+
+        points = [
+            (int(left + i * step_x), int(bottom - (temp - low) / span * (bottom - top)))
+            for i, temp in enumerate(temps)
+        ]
+
+        canvas.line([plot.x, bottom + 6, plot.right, bottom + 6])
+        canvas.line(points, width=2)
+
+        for (x, y), step in zip(points, hourly):
+            canvas.ellipse([x - POINT_RADIUS, y - POINT_RADIUS,
+                            x + POINT_RADIUS, y + POINT_RADIUS], fill=0)
+
+            label = f"{step['temp']}°"
+            label_x = x - canvas.text_width(label, theme.GRAPH_LABEL) // 2
+            canvas.text((label_x, y - 22), label, theme.GRAPH_LABEL)
+
+            hour = step['time'][:2]
+            hour_x = x - canvas.text_width(hour, theme.GRAPH_LABEL) // 2
+            canvas.text((hour_x, bottom + 10), hour, theme.GRAPH_LABEL)
 
     def _draw_daily(self, canvas, rect, forecast):
         """One column per day: name, icon, high/low and rain chance."""
         columns = rect.columns(len(forecast))
         for i, (column, day) in enumerate(zip(columns, forecast)):
-            canvas.text_centered(column, rect.y + BAND_GAP,
+            canvas.text_centered(column, rect.y + 8,
                                  day_abbr(datetime.fromisoformat(day['date'])),
                                  theme.FORECAST_DAY)
 

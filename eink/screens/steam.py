@@ -60,7 +60,7 @@ class SteamScreen(Screen):
             self._draw_recent(canvas, bottom, recent)
 
     def _draw_online(self, canvas, rect, friends):
-        rows = widgets.section_header(canvas, rect, "TERAZ GRAJĄ", len(friends))
+        rows = widgets.section_header(canvas, rect, "PLAYING NOW", len(friends))
         for name, game, row in self._rows(rows, friends):
             canvas.text((row.x, row.y), canvas.fit_text(name, theme.LIST, NAME_WIDTH - 10),
                         theme.LIST)
@@ -69,9 +69,9 @@ class SteamScreen(Screen):
                         canvas.fit_text(label, theme.LIST, row.w - NAME_WIDTH), theme.LIST)
 
     def _draw_recent(self, canvas, rect, recent):
-        rows = widgets.section_header(canvas, rect, "OSTATNIE 2 TYGODNIE")
+        rows = widgets.section_header(canvas, rect, "LAST 2 WEEKS")
         if not recent:
-            canvas.text((rows.x, rows.y), "Nic ostatnio.", theme.LIST)
+            canvas.text((rows.x, rows.y), "Nothing recent.", theme.LIST)
             return
 
         for game, row in self._rows(rows, recent):

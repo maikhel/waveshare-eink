@@ -14,7 +14,7 @@ FORECAST_URL = "https://api.openweathermap.org/data/2.5/forecast"
 MIDDAY_HOUR = 15
 NIGHT_HOUR = 3        # usually the coolest point
 FORECAST_DAYS = 5
-HOURLY_STEPS = 5      # 3h apart, so the rest of today plus a little
+HOURLY_STEPS = 8      # 3h apart, so a full day ahead
 
 
 def _local_time(unix_seconds, shift_seconds):
@@ -24,7 +24,7 @@ def _local_time(unix_seconds, shift_seconds):
 
 
 def fetch_current(api_key):
-    params = {'lat': LAT, 'lon': LON, 'appid': api_key, 'units': 'metric', 'lang': 'pl'}
+    params = {'lat': LAT, 'lon': LON, 'appid': api_key, 'units': 'metric', 'lang': 'en'}
     response = requests.get(CURRENT_URL, params=params)
     response.raise_for_status()
     data = response.json()
@@ -43,7 +43,7 @@ def fetch_current(api_key):
 
 def fetch_forecast(api_key):
     """Returns (hourly, daily) from the same 3-hourly series."""
-    params = {'lat': LAT, 'lon': LON, 'appid': api_key, 'units': 'metric', 'lang': 'pl'}
+    params = {'lat': LAT, 'lon': LON, 'appid': api_key, 'units': 'metric', 'lang': 'en'}
     response = requests.get(FORECAST_URL, params=params)
     response.raise_for_status()
 

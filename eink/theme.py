@@ -14,12 +14,13 @@ FONT_CANDIDATES = [
 
 # Type scale
 SECTION = 18          # small caps-ish band headings
-HERO_TEMP = 72
+HERO_TEMP = 64
 HERO_DESC = 22
-DETAIL = 22
+DETAIL = 20
 HOUR_LABEL = 18
 HOUR_TEMP = 26
 POP = 16
+GRAPH_LABEL = 15
 LIST = 21
 LIST_META = 17
 COUNT = 28

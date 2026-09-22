@@ -10,20 +10,20 @@ META_OFFSET = 25
 
 # reviewDecision -> (marker shape, label). None means nobody has looked yet.
 REVIEW_STATES = {
-    'APPROVED': ('filled', 'zatwierdzony'),
-    'CHANGES_REQUESTED': ('triangle', 'zmiany wymagane'),
-    'REVIEW_REQUIRED': ('hollow', 'czeka na review'),
-    None: ('hollow', 'czeka na review'),
+    'APPROVED': ('filled', 'approved'),
+    'CHANGES_REQUESTED': ('triangle', 'changes requested'),
+    'REVIEW_REQUIRED': ('hollow', 'review required'),
+    None: ('hollow', 'review required'),
 }
 
-DRAFT_STATE = ('square', 'szkic')
+DRAFT_STATE = ('square', 'draft')
 
 CI_LABELS = {
     'SUCCESS': 'CI ok',
-    'FAILURE': 'CI błąd',
-    'ERROR': 'CI błąd',
-    'PENDING': 'CI trwa',
-    'EXPECTED': 'CI trwa',
+    'FAILURE': 'CI failed',
+    'ERROR': 'CI failed',
+    'PENDING': 'CI running',
+    'EXPECTED': 'CI running',
 }
 
 
@@ -51,9 +51,9 @@ class WorkScreen(Screen):
         self._draw_review_queue(canvas, right, github)
 
     def _draw_mine(self, canvas, rect, prs):
-        rows = widgets.section_header(canvas, rect, "MOJE PR", len(prs))
+        rows = widgets.section_header(canvas, rect, "MY PRS", len(prs))
         if not prs:
-            canvas.text((rows.x, rows.y), "Nic otwartego.", theme.LIST)
+            canvas.text((rows.x, rows.y), "Nothing open.", theme.LIST)
             return
 
         for pr, row in self._rows(rows, prs):
@@ -74,9 +74,9 @@ class WorkScreen(Screen):
         queue = github.get('review_requested', [])
         total = github.get('prs_for_review', len(queue))
 
-        rows = widgets.section_header(canvas, rect, "DO REVIEW", total)
+        rows = widgets.section_header(canvas, rect, "TO REVIEW", total)
         if not queue:
-            canvas.text((rows.x, rows.y), "Nic nie czeka :)", theme.LIST)
+            canvas.text((rows.x, rows.y), "Nothing waiting :)", theme.LIST)
             return
 
         shown = list(self._rows(rows, queue, reserve_last=total > 0))
@@ -91,7 +91,7 @@ class WorkScreen(Screen):
         hidden = total - len(shown)
         if hidden > 0:
             last = shown[-1][1]
-            canvas.text((rect.x, last.y + ROW_HEIGHT), f"+ {hidden} więcej", theme.LIST_META)
+            canvas.text((rect.x, last.y + ROW_HEIGHT), f"+ {hidden} more", theme.LIST_META)
 
     @staticmethod
     def _rows(rect, items, reserve_last=False):

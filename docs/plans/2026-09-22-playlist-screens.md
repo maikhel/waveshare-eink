@@ -210,7 +210,7 @@ Two columns across the 424px body, with a vertical divider:
 - **Left — my open PRs.** A drawn status marker (filled = approved, triangle =
   changes requested, hollow = waiting, square = draft), the title truncated to
   the column width, and a meta line of review state + CI status.
-- **Right — the review queue.** Title, then repo + CI status, with a `+N więcej`
+- **Right — the review queue.** Title, then repo + CI status, with a `+N more`
   line when the queue overflows the column.
 
 This needed the fetcher rewritten as a single GraphQL query: the REST search API
@@ -226,16 +226,18 @@ beneath my PRs on the left.
 
 ### Weather
 
-Three bands:
+Two regions above the forecast strip:
 
-- **Hero (150px)** — 128px icon at native size, temperature, description, and a
-  right-hand rail of feels-like, humidity, sunrise and sunset.
-- **Hourly (116px)** — the next five 3-hourly steps with time, icon, temperature
-  and rain chance. This data was already being downloaded and discarded.
-- **Daily (158px)** — the existing 5-day strip, plus rain chance.
+- **Left (330px)** — 128px icon at native size, temperature, description, then
+  feels-like, humidity, sunrise and sunset.
+- **Right** — a line chart of temperature over the next 24 hours, one point per
+  3-hourly step, each labelled with its temperature and hour.
+- **Bottom (158px)** — the 5-day strip, unchanged apart from rain chance.
 
-Rain chance is printed only above 20%; below that the percentage costs more
-attention than it repays.
+The chart is labelled *next 24h* rather than *today*: the forecast API only
+returns future steps, so a "today" chart would shrink to one or two points by
+evening. Rain chance is printed only above 20%; below that the percentage costs
+more attention than it repays.
 
 Needed a second API call: `current` was previously derived from `forecast[0]` of
 the 3-hour series, so it could be three hours stale and carried no feels-like or
@@ -327,3 +329,10 @@ point.
 Open questions for V2: what happens when no playlist matches the current time
 (fallback playlist, or blank panel?), and whether a screen may belong to more
 than one playlist.
+
+## Interface language
+
+All on-screen text is English. The display previously mixed Polish day names and
+labels with English data from the APIs; OpenWeather is now asked for English
+descriptions (`lang=en`) and weekday names come from `strftime('%a')`, which
+follows the C locale rather than the system one.

@@ -6,7 +6,7 @@
       "temp": 10,
       "feels_like": 8,
       "humidity": 76,
-      "description": "zachmurzenie małe",
+      "description": "scattered clouds",
       "icon": "03n",
       "sunrise": "06:41",
       "sunset": "18:55"
@@ -105,8 +105,26 @@
       },
       {
         "time": "03:00",
-        "temp": 7,
+        "temp": 6,
         "icon": "04n",
+        "pop": 0
+      },
+      {
+        "time": "06:00",
+        "temp": 5,
+        "icon": "04n",
+        "pop": 0
+      },
+      {
+        "time": "09:00",
+        "temp": 9,
+        "icon": "04d",
+        "pop": 5
+      },
+      {
+        "time": "12:00",
+        "temp": 13,
+        "icon": "02d",
         "pop": 0
       }
     ]
