@@ -1,6 +1,10 @@
 # Waveshare E-ink Info Display
 
-A Raspberry Pi–powered information display on a Waveshare 7.5" (V2) e-paper screen. Rather than cramming everything onto one layout, it rotates through a *playlist* of screens — work (GitHub), weather, Steam — under a persistent header showing the time, date and rotation position.
+A Raspberry Pi–powered information display on a Waveshare 7.5" (V2) e-paper screen. Rather than cramming everything onto one layout, it rotates through a *playlist* of screens under a persistent header showing the time, date and rotation position:
+
+- **Work** — my open pull requests with review state and CI status, and the queue waiting on my review
+- **Weather** — current conditions in detail, the next few hours, and a 5-day forecast
+- **Steam** — which friends are playing right now, and what I've been playing
 
 ![Preview](assets/preview.png)
 
@@ -71,6 +75,6 @@ mid-slot.
 ## Setup
 
 1. Install the [Waveshare e-Paper library](https://github.com/waveshareteam/e-Paper) on the Pi, plus `pillow`, `requests`, and `python-dotenv`
-2. Copy `.env.example` to `.env` and fill in your API keys and Steam IDs
+2. Copy `.env.example` to `.env` and fill in your API keys and Steam IDs (`STEAM_USER_ID` is your own, for recent playtime)
 3. Schedule the `services/` scripts with cron and run `clock.py` (e.g. as a systemd service)
 4. Edit `playlist.json` to choose which screens rotate and when

@@ -14,10 +14,29 @@
         "gameextrainfo": "Apex Legends"
       },
       "76561198000000003": {
-        "personaname": "Maikhel",
-        "personastate": 0,
+        "personaname": "Friend3",
+        "personastate": 1,
+        "gameextrainfo": "Baldur's Gate 3"
+      },
+      "76561198000000004": {
+        "personaname": "Friend4",
+        "personastate": 3,
         "gameextrainfo": null
       }
-    }
+    },
+    "recent": [
+      {
+        "name": "Factorio",
+        "minutes": 380
+      },
+      {
+        "name": "Hades II",
+        "minutes": 125
+      },
+      {
+        "name": "Celeste",
+        "minutes": 45
+      }
+    ]
   }
 }

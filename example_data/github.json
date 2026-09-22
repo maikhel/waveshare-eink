@@ -4,16 +4,62 @@
   "data": {
     "opened_prs": [
       {
-        "title": "Add new feature",
-        "state": "open",
-        "draft": false
+        "title": "Add archetype audit skill",
+        "draft": false,
+        "review": "APPROVED",
+        "ci": "SUCCESS"
       },
       {
-        "title": "Fix authentication bug",
-        "state": "open",
-        "draft": true
+        "title": "Refactor valuation params into a form object",
+        "draft": false,
+        "review": "CHANGES_REQUESTED",
+        "ci": "FAILURE"
+      },
+      {
+        "title": "Spike: response caching for the report endpoint",
+        "draft": true,
+        "review": null,
+        "ci": "PENDING"
+      },
+      {
+        "title": "Bump sidekiq to 7.3",
+        "draft": false,
+        "review": "REVIEW_REQUIRED",
+        "ci": "SUCCESS"
       }
     ],
-    "prs_for_review": 4
+    "review_requested": [
+      {
+        "title": "Fix N+1 in valuation report",
+        "repo": "VAS_valuation_manager",
+        "ci": "SUCCESS"
+      },
+      {
+        "title": "Bump rails to 7.2",
+        "repo": "VAS_valuation_manager",
+        "ci": "PENDING"
+      },
+      {
+        "title": "Add payment webhook handler",
+        "repo": "vas_billing",
+        "ci": "FAILURE"
+      },
+      {
+        "title": "Extract PDF renderer into a service object",
+        "repo": "VAS_valuation_manager",
+        "ci": "SUCCESS"
+      },
+      {
+        "title": "Tidy up the seeds file",
+        "repo": "vas_billing",
+        "ci": "SUCCESS"
+      },
+      {
+        "title": "Upgrade node to 22",
+        "repo": "vas_frontend",
+        "ci": "SUCCESS"
+      }
+    ],
+    "prs_for_review": 6
   }
 }

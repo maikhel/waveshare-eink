@@ -37,6 +37,17 @@ class Rect:
         return Rect(self.x, self.y, width, self.h), \
             Rect(self.x + width, self.y, self.w - width, self.h)
 
+    def split_bottom(self, height):
+        """Cut a strip off the bottom; returns (remainder, strip)."""
+        return Rect(self.x, self.y, self.w, self.h - height), \
+            Rect(self.x, self.bottom - height, self.w, height)
+
+    def columns(self, count, gap=0):
+        """Divide into `count` equal columns separated by `gap`."""
+        width = (self.w - gap * (count - 1)) // count
+        return [Rect(self.x + i * (width + gap), self.y, width, self.h)
+                for i in range(count)]
+
     def center_x_for(self, width):
         """Left edge that centres something `width` wide inside this rect."""
         return self.x + (self.w - width) // 2
@@ -51,6 +62,11 @@ _icon_cache = {}
 def load_icon(path, size=None):
     """Load an icon as a 1-bit image, flattening transparency onto white.
 
+    Resizing happens in greyscale and the threshold is applied last with
+    dithering off. Converting to 1-bit first (as this used to) dithers the
+    image, and resampling a dithered bitmap smears the pattern into broken
+    strokes -- very visible on line-art weather icons.
+
     Results are cached; callers must treat the returned image as read-only
     (pasting from it is fine, drawing into it is not).
     """
@@ -61,9 +77,11 @@ def load_icon(path, size=None):
     icon = Image.open(path).convert('RGBA')
     background = Image.new('RGBA', icon.size, (255, 255, 255, 255))
     background.paste(icon, (0, 0), icon)
-    icon = background.convert('1')
-    if size is not None:
+
+    icon = background.convert('L')
+    if size is not None and icon.size != (size, size):
         icon = icon.resize((size, size), Image.Resampling.LANCZOS)
+    icon = icon.convert('1', dither=Image.Dither.NONE)
 
     _icon_cache[key] = icon
     return icon
@@ -105,6 +123,20 @@ class Canvas:
     def text(self, xy, text, size, fill=0):
         self.draw.text(xy, text, font=self.font(size), fill=fill)
 
+    def fit_text(self, text, size, max_width, ellipsis='…'):
+        """Shorten `text` until it fits `max_width`, adding an ellipsis."""
+        if self.text_width(text, size) <= max_width:
+            return text
+
+        trimmed = text
+        while trimmed and self.text_width(trimmed + ellipsis, size) > max_width:
+            trimmed = trimmed[:-1]
+        return (trimmed.rstrip() + ellipsis) if trimmed else ellipsis
+
+    def text_right(self, rect, y, text, size, fill=0):
+        """Draw `text` flush against the right edge of `rect`."""
+        self.text((rect.right - self.text_width(text, size), y), text, size, fill=fill)
+
     def text_centered(self, rect, y, text, size, fill=0):
         """Draw `text` horizontally centred within `rect` at vertical `y`."""
         x = rect.center_x_for(self.text_width(text, size))
@@ -125,3 +157,6 @@ class Canvas:
 
     def ellipse(self, xy, fill=None, outline=0, width=1):
         self.draw.ellipse(xy, fill=fill, outline=outline, width=width)
+
+    def polygon(self, points, fill=None, outline=0):
+        self.draw.polygon(points, fill=fill, outline=outline)

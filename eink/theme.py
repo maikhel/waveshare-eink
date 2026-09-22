@@ -13,6 +13,16 @@ FONT_CANDIDATES = [
 ]
 
 # Type scale
+SECTION = 18          # small caps-ish band headings
+HERO_TEMP = 72
+HERO_DESC = 22
+DETAIL = 22
+HOUR_LABEL = 18
+HOUR_TEMP = 26
+POP = 16
+LIST = 21
+LIST_META = 17
+COUNT = 28
 TIME = 120
 CURRENT_TEMP = 40
 FORECAST_DAY = 24
@@ -26,6 +36,11 @@ HEADER_DATE = 22
 HEADER_GAP = 14
 DOT_DIAMETER = 10
 DOT_GAP = 10
+
+# Icon sizes
+ICON_HERO = 128
+ICON_HOUR = 40
+ICON_DAY = 48
 
 # Spacing
 MARGIN = 20

@@ -1,9 +1,34 @@
-"""Work screen: GitHub pull request status."""
+"""Work: my open pull requests and the ones waiting on my review."""
 from .base import Screen
-from .. import theme
-from ..layout import truncate_chars
+from .. import theme, widgets
+from ..layout import Rect
 
-TITLE_CHARS = 10
+COLUMN_GAP = 30
+MARKER_WIDTH = 20
+ROW_HEIGHT = 50
+META_OFFSET = 25
+
+# reviewDecision -> (marker shape, label). None means nobody has looked yet.
+REVIEW_STATES = {
+    'APPROVED': ('filled', 'zatwierdzony'),
+    'CHANGES_REQUESTED': ('triangle', 'zmiany wymagane'),
+    'REVIEW_REQUIRED': ('hollow', 'czeka na review'),
+    None: ('hollow', 'czeka na review'),
+}
+
+DRAFT_STATE = ('square', 'szkic')
+
+CI_LABELS = {
+    'SUCCESS': 'CI ok',
+    'FAILURE': 'CI błąd',
+    'ERROR': 'CI błąd',
+    'PENDING': 'CI trwa',
+    'EXPECTED': 'CI trwa',
+}
+
+
+def _meta_line(*parts):
+    return ' · '.join(part for part in parts if part)
 
 
 class WorkScreen(Screen):
@@ -15,22 +40,65 @@ class WorkScreen(Screen):
         if github is None:
             return
 
-        icon = canvas.icon('github', 'icon.png')
-        icon_x = rect.x + theme.MARGIN
-        icon_y = rect.y + theme.MARGIN
-        canvas.paste(icon, (icon_x, icon_y))
+        body = Rect(rect.x + theme.MARGIN, rect.y + 10,
+                    rect.w - 2 * theme.MARGIN, rect.h - 20)
+        left, right = body.columns(2, gap=COLUMN_GAP)
 
-        text_x = icon_x + theme.ICON + theme.ICON_GAP
-        text_y = icon_y
+        divider_x = (left.right + right.x) // 2
+        canvas.line([divider_x, body.y, divider_x, body.bottom])
 
-        for pr in github.get('opened_prs', [])[:3]:
-            title = truncate_chars(pr.get('title', 'No title'), TITLE_CHARS)
-            state = 'draft' if pr.get('draft', False) else pr.get('state', 'unknown')
-            canvas.text((text_x, text_y), f"{title} - {state}", theme.BODY)
-            text_y += theme.LINE_HEIGHT
+        self._draw_mine(canvas, left, github.get('opened_prs', []))
+        self._draw_review_queue(canvas, right, github)
 
-        # Review count sits below the icon, never overlapping the PR list.
-        text_y = max(text_y, icon_y + theme.ICON + theme.ICON_GAP)
-        review_prs = github.get('prs_for_review', 0)
-        summary = f"{review_prs} PRs to review" if review_prs > 0 else "No PRs to review :)"
-        canvas.text((icon_x, text_y), summary, theme.BODY)
+    def _draw_mine(self, canvas, rect, prs):
+        rows = widgets.section_header(canvas, rect, "MOJE PR", len(prs))
+        if not prs:
+            canvas.text((rows.x, rows.y), "Nic otwartego.", theme.LIST)
+            return
+
+        for pr, row in self._rows(rows, prs):
+            shape, label = DRAFT_STATE if pr.get('draft') else \
+                REVIEW_STATES.get(pr.get('review'), REVIEW_STATES[None])
+
+            widgets.marker(canvas, row.x, row.y + 5, shape)
+            title_x = row.x + MARKER_WIDTH
+            title_width = row.w - MARKER_WIDTH
+            canvas.text((title_x, row.y),
+                        canvas.fit_text(pr.get('title', ''), theme.LIST, title_width),
+                        theme.LIST)
+            canvas.text((title_x, row.y + META_OFFSET),
+                        _meta_line(label, CI_LABELS.get(pr.get('ci'))),
+                        theme.LIST_META)
+
+    def _draw_review_queue(self, canvas, rect, github):
+        queue = github.get('review_requested', [])
+        total = github.get('prs_for_review', len(queue))
+
+        rows = widgets.section_header(canvas, rect, "DO REVIEW", total)
+        if not queue:
+            canvas.text((rows.x, rows.y), "Nic nie czeka :)", theme.LIST)
+            return
+
+        shown = list(self._rows(rows, queue, reserve_last=total > 0))
+        for pr, row in shown:
+            canvas.text((row.x, row.y),
+                        canvas.fit_text(pr.get('title', ''), theme.LIST, row.w),
+                        theme.LIST)
+            canvas.text((row.x, row.y + META_OFFSET),
+                        _meta_line(pr.get('repo'), CI_LABELS.get(pr.get('ci'))),
+                        theme.LIST_META)
+
+        hidden = total - len(shown)
+        if hidden > 0:
+            last = shown[-1][1]
+            canvas.text((rect.x, last.y + ROW_HEIGHT), f"+ {hidden} więcej", theme.LIST_META)
+
+    @staticmethod
+    def _rows(rect, items, reserve_last=False):
+        """Pair items with the row rects that fit, leaving room for a '+N' line."""
+        capacity = rect.h // ROW_HEIGHT
+        if reserve_last and len(items) > capacity:
+            capacity -= 1
+
+        for i, item in enumerate(items[:max(capacity, 0)]):
+            yield item, Rect(rect.x, rect.y + i * ROW_HEIGHT, rect.w, ROW_HEIGHT)

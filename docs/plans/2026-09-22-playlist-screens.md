@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-22
 **Branch:** `playlist-screens`
-**Status:** steps 1–3 done, step 4 next
+**Status:** all four steps done
 
 ## Goal
 
@@ -205,41 +205,62 @@ exiting night mode, alongside the existing forced full refresh.
 
 ### Work
 
-Calendar is deferred, so GitHub gets the whole body — which means it should
-finally be readable. Today `drawing.py` truncates PR titles to **10 characters**
-and reduces the review queue to a bare count.
+Two columns across the 424px body, with a vertical divider:
 
-Two-column body (right column becomes the calendar later):
+- **Left — my open PRs.** A drawn status marker (filled = approved, triangle =
+  changes requested, hollow = waiting, square = draft), the title truncated to
+  the column width, and a meta line of review state + CI status.
+- **Right — the review queue.** Title, then repo + CI status, with a `+N więcej`
+  line when the queue overflows the column.
 
-- **Left:** my open PRs, grouped by state (draft / open / changes requested),
-  full-width titles with proper truncation.
-- **Right:** review queue as an actual list — repo, title, age — not a number.
+This needed the fetcher rewritten as a single GraphQL query: the REST search API
+cannot return `reviewDecision` or check status at all. One call now replaces the
+two REST searches and returns strictly more.
+
+Status markers are **drawn, not typed.** The Pi renders with DejaVu and a
+desktop preview with Arial, and symbol coverage differs between them — a missing
+glyph would show up as a box only on the device, where it is hardest to notice.
+
+Calendar, when it arrives, takes the right column and the review queue moves
+beneath my PRs on the left.
 
 ### Weather
 
-- **Left ~40%:** big icon, temperature, feels-like, wind, humidity, description.
-- **Right / bottom:** the existing 5-day midday/midnight strip.
+Three bands:
 
-Requires a fetcher change: `fetch_weather.py` currently derives "current" from
-`forecast_list[0]` of the 3-hour forecast endpoint, which can be up to three hours
-off and carries no feels-like, wind, or humidity. Add a second call to the current
-weather endpoint and put it under `data.current`.
+- **Hero (150px)** — 128px icon at native size, temperature, description, and a
+  right-hand rail of feels-like, humidity, sunrise and sunset.
+- **Hourly (116px)** — the next five 3-hourly steps with time, icon, temperature
+  and rain chance. This data was already being downloaded and discarded.
+- **Daily (158px)** — the existing 5-day strip, plus rain chance.
+
+Rain chance is printed only above 20%; below that the percentage costs more
+attention than it repays.
+
+Needed a second API call: `current` was previously derived from `forecast[0]` of
+the 3-hour series, so it could be three hours stale and carried no feels-like or
+humidity.
 
 ### Steam
 
-Three bands, each independently skippable:
+Two bands, each collapsing when empty so no heading is left stranded:
 
-1. Friends online now — nickname, game, session length.
-2. My recent playtime — `IPlayerService/GetRecentlyPlayedGames` (last 2 weeks).
-3. Wishlist — titles and any price drops.
+1. **Friends online now** — nickname and game, with room for the full title
+   rather than clipping at 25 characters.
+2. **My recent playtime** — `GetRecentlyPlayedGames`, last two weeks.
 
-The wishlist endpoint is undocumented store JSON and has broken before; a wishlist
-failure must degrade to hiding that band only, never to failing the screen.
+**The wishlist band was dropped.** It was the only undocumented endpoint in the
+project and had broken before; the screen is better without that failure mode.
+
+Because the recent-playtime band has content even when nobody is online, this
+screen no longer drops out of the rotation as often as it did. `available()` is
+now "either band has something".
 
 ### Extra
 
-`assets/quotes.json`, indexed by day-of-year — deterministic, no network, no
-failure mode. This is the slot to reuse for whatever comes next.
+**Not built.** The quotes screen was dropped rather than filling the slot with
+something decorative; the playlist stays at three screens until something earns
+the fourth.
 
 ## Implementation order
 
@@ -260,8 +281,11 @@ slims to the lifecycle. Night-mode reset and the new refresh policy land here.
 existing fetchers; update `example_data/` fixtures to the envelope shape.
 
 **Step 4 — enrich.**
-Only now: the richer weather fetch, the new Steam endpoints, the quotes screen,
-and the redesigned Work layout.
+The richer weather fetch, the new Steam endpoints, and the redesigned Work
+layout. Also fixed the icon pipeline: icons were converted to 1-bit (which
+dithers) and *then* resampled, which smears the dither into broken strokes.
+Resizing in greyscale and thresholding last, with dithering off, is visibly
+cleaner — and matters more now that the weather hero icon is 128px.
 
 Steps 1–2 carry all the risk and neither requires touching the Pi.
 
