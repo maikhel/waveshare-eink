@@ -1,0 +1,23 @@
+{
+  "tick_seconds": 60,
+  "header": { "clock": true, "indicator": true },
+  "screens": [
+    {
+      "id": "work",
+      "dwell": "10m",
+      "when": [{ "days": "weekdays", "hours": [8, 18] }]
+    },
+    {
+      "id": "weather",
+      "dwell": "6m"
+    },
+    {
+      "id": "steam",
+      "dwell": "6m",
+      "when": [
+        { "days": "weekdays", "hours": [17, 24] },
+        { "days": "weekends" }
+      ]
+    }
+  ]
+}

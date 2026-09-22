@@ -8,17 +8,18 @@ if os.path.exists(libdir):
     sys.path.append(libdir)
 
 from waveshare_epd import epd7in5_V2
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 import time
 
-import drawing
+from eink import config as config_module
+from eink import render, screens, theme
+from eink.playlist import Playlist
+from eink.screens import Context
 
 OUT_DIR = os.path.expanduser('~/eink/logs')
 os.makedirs(OUT_DIR, exist_ok=True)
 LOG_FILE = os.path.join(OUT_DIR, 'clock.log')
-
-font = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s: %(message)s',
@@ -36,8 +37,21 @@ NIGHT_END_HOUR = 7       # 07:00 exclusive
 def is_night(now):
     return NIGHT_START_HOUR <= now.hour < NIGHT_END_HOUR
 
+def describe_age(age):
+    if age is None:
+        return "age unknown"
+    minutes = int(age.total_seconds() // 60)
+    if minutes < 60:
+        return f"{minutes}m old"
+    return f"{minutes // 60}h{minutes % 60:02d}m old"
+
 def run_clock():
     logging.info("Starting E-Ink clock")
+
+    fonts = theme.Fonts()
+    config = config_module.load(known_screens=screens.REGISTRY)
+    playlist = Playlist(config, screens)
+    logging.info("Playlist: %s", ", ".join(e.id for e in config.entries))
 
     epd = epd7in5_V2.EPD()
     logging.debug("Initializing display")
@@ -60,22 +74,33 @@ def run_clock():
                     epd.Clear()
                     epd.sleep()
                     sleeping_for_night = True
-                time.sleep(60)
+                time.sleep(config.tick_seconds)
                 continue
 
             if sleeping_for_night:
                 logging.info("Exiting night mode")
                 sleeping_for_night = False
                 partials_since_full = FULL_REFRESH_EVERY  # force full refresh on wake
+                playlist.reset()  # resuming mid-cycle after hours of blank is arbitrary
 
-            logging.debug("Drawing current date and time")
-            image = drawing.draw_date_and_time(epd.width, epd.height, font)
-            drawing.draw_weather_info(image, epd.width, epd.height, font)
-            drawing.draw_steam_or_github(image, font)
+            ctx = Context(now=now, fonts=fonts)
+            slide = playlist.tick(ctx)
+            if slide.rotated:
+                if slide.is_empty:
+                    logging.info("Showing screen: none eligible")
+                else:
+                    # Data age makes a silently dead cron job visible in the log.
+                    ages = ", ".join(
+                        f"{source} {describe_age(ctx.age(source))}"
+                        for source in slide.screen.requires)
+                    logging.info("Showing screen: %s (%s)", slide.entry.id, ages)
+            image = render.draw(ctx, epd.width, epd.height, slide, config)
 
             buf = epd.getbuffer(image)
 
-            if partials_since_full >= FULL_REFRESH_EVERY:
+            # A rotation replaces the whole panel, so it gets a full refresh --
+            # which doubles as the periodic ghosting flush.
+            if slide.rotated or partials_since_full >= FULL_REFRESH_EVERY:
                 logging.info("Full refresh")
                 epd.init_fast()
                 epd.display(buf)
@@ -88,8 +113,8 @@ def run_clock():
 
             epd.sleep()
 
-            logging.info("Done. Going to sleep 60 seconds")
-            time.sleep(60)
+            logging.info("Done. Going to sleep %d seconds", config.tick_seconds)
+            time.sleep(config.tick_seconds)
 
     except KeyboardInterrupt:
         logging.warning("Interrupted by user, clearing display")

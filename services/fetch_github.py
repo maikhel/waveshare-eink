@@ -1,58 +1,98 @@
-import os
 import requests
-import json
-import sys
-from datetime import datetime, timezone
-from dotenv import load_dotenv
+
+import common
 
 USERNAME = "maikhel"
-REPO= "vas-panel/VAS_valuation_manager"
+REPO = "vas-panel/VAS_valuation_manager"
+GRAPHQL_URL = "https://api.github.com/graphql"
 
-load_dotenv()
+MAX_PRS = 8
+
+# One GraphQL call replaces two REST searches and adds review state and CI
+# status, neither of which the REST search API can return at all.
+QUERY = """
+query($mine: String!, $review: String!, $limit: Int!) {
+  mine: search(query: $mine, type: ISSUE, first: $limit) {
+    issueCount
+    nodes {
+      ... on PullRequest {
+        title
+        isDraft
+        reviewDecision
+        commits(last: 1) {
+          nodes { commit { statusCheckRollup { state } } }
+        }
+      }
+    }
+  }
+  review: search(query: $review, type: ISSUE, first: $limit) {
+    issueCount
+    nodes {
+      ... on PullRequest {
+        title
+        repository { name }
+        commits(last: 1) {
+          nodes { commit { statusCheckRollup { state } } }
+        }
+      }
+    }
+  }
+}
+"""
+
+
+def _ci_state(node):
+    """SUCCESS / FAILURE / PENDING / ... or None when there are no checks."""
+    commits = (node.get('commits') or {}).get('nodes') or []
+    if not commits:
+        return None
+    rollup = (commits[0].get('commit') or {}).get('statusCheckRollup')
+    return rollup.get('state') if rollup else None
+
 
 def fetch_github():
-    api_key = os.getenv('GITHUB_TOKEN')
-    if not api_key:
-        raise ValueError("GITHUB_TOKEN not set")
-
-    headers = {
-        'Authorization': f'token {api_key}',
-        'Accept': 'application/vnd.github.v3+json'
+    headers = {'Authorization': f"bearer {common.require_env('GITHUB_TOKEN')}"}
+    variables = {
+        'mine': f"type:pr author:{USERNAME} is:open repo:{REPO}",
+        'review': f"type:pr review-requested:{USERNAME} is:open",
+        'limit': MAX_PRS,
     }
 
-    created_url = f"https://api.github.com/search/issues?q=type:pr+author:{USERNAME}+is:open+repo:{REPO}"
-    created_response = requests.get(created_url, headers=headers)
-    created_response.raise_for_status()
-    items = created_response.json().get("items", [])
-    
-    # Extract only the required fields
-    opened_prs_data = []
-    for item in items:
-        pr_info = {
-            'title': item['title'],
-            'state': item['state'],
-            'draft': item.get('draft', False)
+    response = requests.post(GRAPHQL_URL, headers=headers,
+                             json={'query': QUERY, 'variables': variables})
+    response.raise_for_status()
+    body = response.json()
+
+    # GraphQL reports errors in a 200 response, so raise_for_status is not enough.
+    if body.get('errors'):
+        raise ValueError(body['errors'][0].get('message', 'GraphQL error'))
+
+    data = body['data']
+
+    opened_prs = [
+        {
+            'title': node['title'],
+            'draft': node.get('isDraft', False),
+            'review': node.get('reviewDecision'),
+            'ci': _ci_state(node),
         }
-        opened_prs_data.append(pr_info)
+        for node in data['mine']['nodes'] if node
+    ]
 
-    review_url = f"https://api.github.com/search/issues?q=type:pr+review-requested:{USERNAME}+is:open"
-    review_prs_count = requests.get(review_url, headers=headers).json().get("total_count", 0)
+    review_requested = [
+        {
+            'title': node['title'],
+            'repo': (node.get('repository') or {}).get('name'),
+            'ci': _ci_state(node),
+        }
+        for node in data['review']['nodes'] if node
+    ]
 
-    github_info = {
-        'opened_prs': opened_prs_data,
-        'prs_for_review': review_prs_count,
-        'last_updated': datetime.now(timezone.utc).isoformat()
+    return {
+        'opened_prs': opened_prs,
+        'review_requested': review_requested,
+        'prs_for_review': data['review']['issueCount'],
     }
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    data_file = os.path.join(script_dir, '..', 'data', 'github.json')
-    with open(data_file, 'w') as f:
-        json.dump(github_info, f, indent=2)
 
-    return github_info
-
-try:
-    fetch_github()
-except Exception as e:
-    print(f"[ERROR] {e}")
-    sys.exit(1)
+common.run('github', fetch_github)

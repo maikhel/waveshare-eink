@@ -1,64 +1,132 @@
 {
-  "current": {
-    "temp": 10,
-    "description": "zachmurzenie ma\u0142e",
-    "icon": "03n"
-  },
-  "forecast": [
-    {
-      "date": "2025-10-26",
-      "midday": {
-        "temp": 12,
-        "icon": "04d"
-      },
-      "midnight": {
-        "temp": 10,
-        "icon": "10n"
-      }
+  "source": "weather",
+  "fetched_at": "2026-09-22T12:00:04+00:00",
+  "data": {
+    "current": {
+      "temp": 10,
+      "feels_like": 8,
+      "humidity": 76,
+      "description": "scattered clouds",
+      "icon": "03n",
+      "sunrise": "06:41",
+      "sunset": "18:55"
     },
-    {
-      "date": "2025-10-27",
-      "midday": {
-        "temp": 8,
-        "icon": "04d"
+    "forecast": [
+      {
+        "date": "2025-10-26",
+        "midday": {
+          "temp": 12,
+          "icon": "04d",
+          "pop": 5
+        },
+        "midnight": {
+          "temp": 10,
+          "icon": "10n",
+          "pop": 0
+        }
       },
-      "midnight": {
-        "temp": 7,
-        "icon": "10n"
-      }
-    },
-    {
-      "date": "2025-10-28",
-      "midday": {
-        "temp": 7,
-        "icon": "10d"
+      {
+        "date": "2025-10-27",
+        "midday": {
+          "temp": 8,
+          "icon": "04d",
+          "pop": 20
+        },
+        "midnight": {
+          "temp": 7,
+          "icon": "10n",
+          "pop": 10
+        }
       },
-      "midnight": {
-        "temp": 7,
-        "icon": "10n"
+      {
+        "date": "2025-10-28",
+        "midday": {
+          "temp": 7,
+          "icon": "10d",
+          "pop": 60
+        },
+        "midnight": {
+          "temp": 7,
+          "icon": "10n",
+          "pop": 5
+        }
+      },
+      {
+        "date": "2025-10-29",
+        "midday": {
+          "temp": 11,
+          "icon": "10d",
+          "pop": 45
+        },
+        "midnight": {
+          "temp": 7,
+          "icon": "04n",
+          "pop": 30
+        }
+      },
+      {
+        "date": "2025-10-30",
+        "midday": {
+          "temp": 13,
+          "icon": "04d",
+          "pop": 10
+        },
+        "midnight": {
+          "temp": 8,
+          "icon": "04n",
+          "pop": 0
+        }
       }
-    },
-    {
-      "date": "2025-10-29",
-      "midday": {
+    ],
+    "hourly": [
+      {
+        "time": "15:00",
         "temp": 11,
-        "icon": "10d"
+        "icon": "04d",
+        "pop": 10
       },
-      "midnight": {
-        "temp": 7,
-        "icon": "04n"
-      }
-    },
-    {
-      "date": "2025-10-30",
-      "midday": {
-        "temp": 13,
-        "icon": "04d"
+      {
+        "time": "18:00",
+        "temp": 10,
+        "icon": "04d",
+        "pop": 35
       },
-      "midnight": {
+      {
+        "time": "21:00",
         "temp": 8,
-        "icon": "04n"
+        "icon": "10n",
+        "pop": 70
+      },
+      {
+        "time": "00:00",
+        "temp": 7,
+        "icon": "04n",
+        "pop": 15
+      },
+      {
+        "time": "03:00",
+        "temp": 6,
+        "icon": "04n",
+        "pop": 0
+      },
+      {
+        "time": "06:00",
+        "temp": 5,
+        "icon": "04n",
+        "pop": 0
+      },
+      {
+        "time": "09:00",
+        "temp": 9,
+        "icon": "04d",
+        "pop": 5
+      },
+      {
+        "time": "12:00",
+        "temp": 13,
+        "icon": "02d",
+        "pop": 0
       }
-    }
-  ]
+    ]
+  }
 }

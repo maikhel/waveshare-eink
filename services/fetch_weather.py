@@ -1,82 +1,97 @@
 import requests
-import json
-import os
-import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import defaultdict
-from dotenv import load_dotenv
 
-load_dotenv()
+import common
 
-def fetch_weather():
-    api_key = os.getenv('OPEN_WEATHER_API_KEY')
-    if not api_key:
-        raise ValueError("OPEN_WEATHER_API_KEY environment variable not set")
+# Warsaw, PL
+LON = 21.017532
+LAT = 52.237049
 
-    # "Warsaw,PL"
-    lon = 21.017532
-    lat = 52.237049
+CURRENT_URL = "https://api.openweathermap.org/data/2.5/weather"
+FORECAST_URL = "https://api.openweathermap.org/data/2.5/forecast"
 
-    url = f"https://api.openweathermap.org/data/2.5/forecast?lon={lon}&lat={lat}&appid={api_key}&units=metric&lang=pl"
+MIDDAY_HOUR = 15
+NIGHT_HOUR = 3        # usually the coolest point
+FORECAST_DAYS = 5
+HOURLY_STEPS = 8      # 3h apart, so a full day ahead
 
-    response = requests.get(url)
-    response.raise_for_status()  # Raise error for bad status codes
 
+def _local_time(unix_seconds, shift_seconds):
+    """Format an API timestamp in the forecast location's own timezone."""
+    moment = datetime.fromtimestamp(unix_seconds, tz=timezone.utc) + timedelta(seconds=shift_seconds)
+    return moment.strftime('%H:%M')
+
+
+def fetch_current(api_key):
+    params = {'lat': LAT, 'lon': LON, 'appid': api_key, 'units': 'metric', 'lang': 'en'}
+    response = requests.get(CURRENT_URL, params=params)
+    response.raise_for_status()
     data = response.json()
 
-    forecast_list = data.get('list', [])
-    if not forecast_list:
+    shift = data.get('timezone', 0)
+    return {
+        'temp': round(data['main']['temp']),
+        'feels_like': round(data['main']['feels_like']),
+        'humidity': data['main']['humidity'],
+        'description': data['weather'][0]['description'],
+        'icon': data['weather'][0]['icon'],
+        'sunrise': _local_time(data['sys']['sunrise'], shift),
+        'sunset': _local_time(data['sys']['sunset'], shift),
+    }
+
+
+def fetch_forecast(api_key):
+    """Returns (hourly, daily) from the same 3-hourly series."""
+    params = {'lat': LAT, 'lon': LON, 'appid': api_key, 'units': 'metric', 'lang': 'en'}
+    response = requests.get(FORECAST_URL, params=params)
+    response.raise_for_status()
+
+    steps = response.json().get('list', [])
+    if not steps:
         raise ValueError("No forecast data")
 
-    # Treat first item as current weather
-    first = forecast_list[0]
-    current = {
-        "temp": round(first['main']['temp']),
-        "description": first['weather'][0]['description'],
-        "icon": first['weather'][0]['icon']
-    }
+    hourly = [
+        {
+            'time': datetime.fromisoformat(step['dt_txt']).strftime('%H:%M'),
+            'temp': round(step['main']['temp']),
+            'icon': step['weather'][0]['icon'],
+            'pop': round(step.get('pop', 0) * 100),
+        }
+        for step in steps[:HOURLY_STEPS]
+    ]
 
-    # Process forecast for midday and midnight
     grouped = defaultdict(dict)
-    for item in forecast_list:
-        dt = datetime.fromisoformat(item['dt_txt'])
-        date_str = dt.date().isoformat()
-        hour = dt.hour
-        if hour == 15:  # Midday
-            grouped[date_str]['midday'] = {
-                'temp': round(item['main']['temp']),
-                'icon': item['weather'][0]['icon']
-            }
-        elif hour == 3:  # usually the coolest time
-            grouped[date_str]['midnight'] = {
-                'temp': round(item['main']['temp']),
-                'icon': item['weather'][0]['icon']
-            }
+    for step in steps:
+        at = datetime.fromisoformat(step['dt_txt'])
+        slot = {'midday': MIDDAY_HOUR, 'midnight': NIGHT_HOUR}
+        for name, hour in slot.items():
+            if at.hour == hour:
+                grouped[at.date().isoformat()][name] = {
+                    'temp': round(step['main']['temp']),
+                    'icon': step['weather'][0]['icon'],
+                    'pop': round(step.get('pop', 0) * 100),
+                }
 
-    # Build forecast for next 5 days
-    forecast = []
+    daily = []
     today = datetime.now().date()
-    for i in range(1, 6):  # Days 1-5
-        target_date = (today + timedelta(days=i)).isoformat()
-        if target_date in grouped and 'midday' in grouped[target_date] and 'midnight' in grouped[target_date]:
-            forecast.append({
-                'date': target_date,
-                'midday': grouped[target_date]['midday'],
-                'midnight': grouped[target_date]['midnight']
-            })
+    for offset in range(1, FORECAST_DAYS + 1):
+        date = (today + timedelta(days=offset)).isoformat()
+        day = grouped.get(date, {})
+        if 'midday' in day and 'midnight' in day:
+            daily.append({'date': date, 'midday': day['midday'], 'midnight': day['midnight']})
 
-    weather_info = {
-        'current': current,
-        'forecast': forecast
+    return hourly, daily
+
+
+def fetch_weather():
+    api_key = common.require_env('OPEN_WEATHER_API_KEY')
+    hourly, daily = fetch_forecast(api_key)
+    return {
+        'current': fetch_current(api_key),
+        'hourly': hourly,
+        'forecast': daily,
     }
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    data_file = os.path.join(script_dir, '..', 'data', 'weather.json')
-    with open(data_file, 'w') as f:
-        json.dump(weather_info, f, indent=2)
 
-try:
-    fetch_weather()
-except Exception as e:
-    print(f"[ERROR] {e}")
-    sys.exit(1)
+common.run('weather', fetch_weather)
