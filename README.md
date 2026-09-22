@@ -1,6 +1,6 @@
 # Waveshare E-ink Info Display
 
-A Raspberry Pi–powered information display on a Waveshare 7.5" (V2) e-paper screen. It shows the current date and time, a weather forecast (OpenWeather), and — depending on the time of day — either my GitHub pull request status or my Steam friends' activity.
+A Raspberry Pi–powered information display on a Waveshare 7.5" (V2) e-paper screen. Rather than cramming everything onto one layout, it rotates through a *playlist* of screens — work (GitHub), weather, Steam — under a persistent header showing the time, date and rotation position.
 
 ![Preview](assets/preview.png)
 
@@ -14,14 +14,45 @@ The posts reference specific stages of this repo — the [`1.0`](../../tree/1.0)
 
 ## How it works
 
-- `clock.py` — main loop: renders the screen every minute, sleeps at night
-- `drawing.py` — composes the image (time, weather, GitHub/Steam panels) with Pillow
+Two halves that only meet through JSON on disk: services fetch data on their own
+schedule, the renderer draws whatever is currently in `data/`.
+
+- `clock.py` — main loop: e-ink lifecycle, refresh policy, night mode
+- `eink/` — the renderer
+  - `render.py` — composes the header strip plus the active screen
+  - `playlist.py` — decides which screen is showing
+  - `screens/` — one module per screen, each declaring the data it needs
+  - `layout.py`, `theme.py` — layout primitives and the type scale
 - `services/` — fetch scripts for weather, GitHub PRs, and Steam friend statuses; each writes JSON to `data/` (run them from cron)
-- `demo.py` — renders the layout to `preview.png` without the e-ink hardware, using `example_data/`
+- `playlist.json` — which screens rotate, for how long, and when
+- `demo.py` — renders to `preview.png` plus `preview_<id>.png` per screen, without the e-ink hardware, using `example_data/`
 - `shutdown.py`, `deep_clean.py` — clear the panel safely / remove ghosting
+
+Screens that have no data, or nothing worth showing, drop out of the rotation
+instead of displaying an empty panel.
+
+## The playlist
+
+`playlist.json` controls rotation. Each screen has a `dwell` (`"5m"`, `"90s"` or
+a plain number of seconds) and an optional `when`, a list of conditions of which
+any one matching is enough:
+
+```json
+{
+  "id": "work",
+  "dwell": "5m",
+  "when": [{ "days": "weekdays", "hours": [8, 18] }]
+}
+```
+
+`days` is `all`, `weekdays` or `weekends`; `hours` is `[start, end]` with `start`
+inclusive and `end` exclusive. A screen with no `when` is always scheduled.
+Rotation is decided only at screen changes, so the panel never reshuffles
+mid-slot.
 
 ## Setup
 
 1. Install the [Waveshare e-Paper library](https://github.com/waveshareteam/e-Paper) on the Pi, plus `pillow`, `requests`, and `python-dotenv`
 2. Copy `.env.example` to `.env` and fill in your API keys and Steam IDs
 3. Schedule the `services/` scripts with cron and run `clock.py` (e.g. as a systemd service)
+4. Edit `playlist.json` to choose which screens rotate and when

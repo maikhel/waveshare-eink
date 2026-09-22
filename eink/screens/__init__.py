@@ -11,7 +11,8 @@ REGISTRY = {
 
 
 def get(screen_id):
-    return REGISTRY[screen_id]
+    """Return the screen, or None if nothing is registered under that id."""
+    return REGISTRY.get(screen_id)
 
 
 __all__ = ['Context', 'Screen', 'REGISTRY', 'get']

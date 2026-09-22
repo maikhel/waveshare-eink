@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-22
 **Branch:** `playlist-screens`
-**Status:** proposed
+**Status:** steps 1–2 done, step 3 next
 
 ## Goal
 
@@ -107,27 +107,32 @@ the next screen once, at the moment of rotation, then leave it alone.
 
 ## Playlist configuration
 
-`playlist.yaml`:
+`playlist.json` (JSON rather than YAML, to keep the Pi dependency-free):
 
-```yaml
-tick_seconds: 60
-header:
-  clock: true
-  indicator: dots
-
-screens:
-  - id: work
-    dwell: 5m
-    when: "weekday and 8 <= hour < 18"
-  - id: weather
-    dwell: 3m
-  - id: steam
-    dwell: 3m
-    when: "hour >= 17 or weekend"
-    skip_if_empty: true
-  - id: quote
-    dwell: 2m
+```json
+{
+  "tick_seconds": 60,
+  "header": { "clock": true, "indicator": true },
+  "screens": [
+    { "id": "work", "dwell": "5m",
+      "when": [{ "days": "weekdays", "hours": [8, 18] }] },
+    { "id": "weather", "dwell": "3m" },
+    { "id": "steam", "dwell": "3m",
+      "when": [{ "days": "weekdays", "hours": [17, 24] },
+               { "days": "weekends" }] }
+  ]
+}
 ```
+
+**`when` is structured, not an expression string.** Each clause is
+`{days, hours}` with `days` in `all`/`weekdays`/`weekends` and `hours` a
+`[start, end)` pair; a list of clauses means *any of these*. This avoids
+`eval()` entirely, is trivially unit-testable, and maps one-to-one onto V2
+playlists — which was the whole point of keeping the condition thin.
+
+**`skip_if_empty` was dropped.** It duplicated `available()`. A screen alone
+knows whether it has anything worth a slot — the Steam screen reports
+unavailable when no friends are online — so there is one mechanism, not two.
 
 Engine: filter by `when` + `available()`, round-robin the survivors, advance when
 dwell expires. Adding a screen is one file plus four lines of YAML; reordering the
@@ -135,10 +140,6 @@ day never touches Python.
 
 This replaces the hardcoded weekday/work-hours `if` in `drawing.py`
 (`draw_steam_or_github`).
-
-`when` should be a small, explicitly-evaluated expression over a fixed set of
-names (`hour`, `weekday`, `weekend`, `minute`) — not a bare `eval()` of arbitrary
-config.
 
 ## Data contract
 
@@ -278,7 +279,7 @@ and weekends. Rotation happens within the active playlist.
 ```yaml
 playlists:
   - id: work
-    when: "weekday and 8 <= hour < 18"
+    when: [{ days: weekdays, hours: [8, 18] }]
     screens: [work, weather]
   - id: home
     screens: [weather, steam, quote]
@@ -291,8 +292,8 @@ belongs to the screen.
 
 Therefore **keep V1's `when:` deliberately thin.** It is a stand-in for playlists,
 not a feature to grow. Resist building an expression language that V2 will
-delete. The fixed name set (`hour`, `weekday`, `weekend`, `minute`) is the
-ceiling, not a starting point.
+delete. The structured `{days, hours}` clause is the ceiling, not a starting
+point.
 
 Open questions for V2: what happens when no playlist matches the current time
 (fallback playlist, or blank panel?), and whether a screen may belong to more

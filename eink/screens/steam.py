@@ -11,6 +11,11 @@ class SteamScreen(Screen):
     id = 'steam'
     requires = ('steam',)
 
+    def available(self, ctx):
+        """Nobody online is nothing worth a slot in the rotation."""
+        steam = ctx.load('steam')
+        return steam is not None and bool(self._online_lines(steam))
+
     def render(self, canvas, rect, ctx):
         steam = ctx.load('steam')
         if steam is None:

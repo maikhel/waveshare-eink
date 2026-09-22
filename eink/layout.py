@@ -122,3 +122,6 @@ class Canvas:
 
     def rectangle(self, xy, outline=0, width=1):
         self.draw.rectangle(xy, outline=outline, width=width)
+
+    def ellipse(self, xy, fill=None, outline=0, width=1):
+        self.draw.ellipse(xy, fill=fill, outline=outline, width=width)

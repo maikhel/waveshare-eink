@@ -3,6 +3,7 @@ from datetime import datetime
 
 from .base import Screen
 from .. import theme
+from ..dates import day_abbr
 from ..layout import Rect
 
 ICON_MAPPING = {
@@ -27,16 +28,6 @@ ICON_MAPPING = {
 }
 
 UNKNOWN_ICON = 'wi-alien-big.png'
-
-DAY_NAMES = {
-    'Mon': 'Pon',
-    'Tue': 'Wt',
-    'Wed': 'Śr',
-    'Thu': 'Czw',
-    'Fri': 'Pt',
-    'Sat': 'Sob',
-    'Sun': 'Nie',
-}
 
 FORECAST_ICON = 48
 FORECAST_ITEM_WIDTH = 100
@@ -90,9 +81,8 @@ class WeatherScreen(Screen):
         for i, day in enumerate(forecast):
             column = Rect(x, forecast_y, FORECAST_ITEM_WIDTH, 150)
 
-            weekday = datetime.fromisoformat(day['date']).strftime('%a')
-            canvas.text_centered(column, forecast_y,
-                                 DAY_NAMES.get(weekday, weekday), theme.FORECAST_DAY)
+            label = day_abbr(datetime.fromisoformat(day['date']))
+            canvas.text_centered(column, forecast_y, label, theme.FORECAST_DAY)
 
             icon = _icon(canvas, day['midday']['icon'], FORECAST_ICON)
             icon_y = forecast_y + 30
