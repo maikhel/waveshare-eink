@@ -35,10 +35,16 @@ POP_THRESHOLD = 20
 DAILY_HEIGHT = 158
 LEFT_WIDTH = 330
 COLUMN_GAP = 24
+ICON_TEMP_GAP = 10
+FEELS_GAP = 44
 
-# Graph geometry
-GRAPH_TOP_PAD = 22      # room for the temperature labels above the curve
-GRAPH_BOTTOM_PAD = 26   # room for the hour labels under the axis
+HEADER_TOP_PAD = 14
+
+# Graph geometry. The curve is kept clear of both rules: without the padding
+# the hottest hour sits on the heading rule and the coldest on the axis.
+GRAPH_TOP_PAD = 30      # below the heading rule, before the highest point
+AXIS_OFFSET = 30        # axis line above the bottom, leaving room for hours
+POINT_CLEARANCE = 18    # between the lowest point and the axis line
 GRAPH_SIDE_PAD = 20
 POINT_RADIUS = 3
 
@@ -63,7 +69,8 @@ class WeatherScreen(Screen):
         body = Rect(rect.x + theme.MARGIN, rect.y, rect.w - 2 * theme.MARGIN, rect.h)
         top, daily = body.split_bottom(DAILY_HEIGHT)
         left, right = top.split_left(LEFT_WIDTH)
-        right = Rect(right.x + COLUMN_GAP, right.y, right.w - COLUMN_GAP, right.h)
+        right = Rect(right.x + COLUMN_GAP, right.y + HEADER_TOP_PAD,
+                     right.w - COLUMN_GAP, right.h - HEADER_TOP_PAD)
 
         current = weather.get('current')
         if current:
@@ -78,38 +85,31 @@ class WeatherScreen(Screen):
             self._draw_daily(canvas, daily, weather['forecast'])
 
     def _draw_current(self, canvas, rect, current):
-        """Icon and temperature, the description, then a list of details."""
-        icon_y = rect.y + 2
-        canvas.paste(_icon(canvas, current.get('icon'), theme.ICON_HERO), (rect.x, icon_y))
+        """Icon, temperature and how it feels -- nothing else.
 
+        The description is dropped on purpose: the icon already says "broken
+        clouds", and saying it twice costs a line that the temperature can use.
+        """
         temp_text = f"{current.get('temp', '--')}°"
         temp_bbox = canvas.text_bbox(temp_text, theme.HERO_TEMP)
-        temp_x = rect.x + theme.ICON_HERO + 10
-        temp_y = icon_y + (theme.ICON_HERO - (temp_bbox[3] - temp_bbox[1])) // 2 - temp_bbox[1]
-        canvas.text((temp_x, temp_y), temp_text, theme.HERO_TEMP)
+        temp_w = temp_bbox[2] - temp_bbox[0]
 
-        description = current.get('description', '')
-        if description:
-            canvas.text((rect.x, rect.y + 130),
-                        canvas.fit_text(description.capitalize(), theme.HERO_DESC, rect.w),
-                        theme.HERO_DESC)
+        feels = current.get('feels_like')
+        feels_text = f"Feels like {feels}°" if feels is not None else None
 
-        # Built from what is present: a file written before these fields
-        # existed still renders, just with fewer rows.
-        rows = []
-        if current.get('feels_like') is not None:
-            rows.append(("Feels like", f"{current['feels_like']}°"))
-        if current.get('humidity') is not None:
-            rows.append(("Humidity", f"{current['humidity']}%"))
-        if current.get('sunrise'):
-            rows.append(("Sunrise", current['sunrise']))
-        if current.get('sunset'):
-            rows.append(("Sunset", current['sunset']))
-        y = rect.y + 160
-        for label, value in rows:
-            canvas.text((rect.x, y), label, theme.DETAIL)
-            canvas.text_right(rect, y, value, theme.DETAIL)
-            y += 25
+        group_w = theme.ICON_HERO + ICON_TEMP_GAP + temp_w
+        group_h = theme.ICON_HERO + (FEELS_GAP if feels_text else 0)
+
+        x = rect.center_x_for(group_w)
+        y = rect.center_y_for(group_h)
+
+        canvas.paste(_icon(canvas, current.get('icon'), theme.ICON_HERO), (x, y))
+        canvas.text((x + theme.ICON_HERO + ICON_TEMP_GAP,
+                     y + (theme.ICON_HERO - (temp_bbox[3] - temp_bbox[1])) // 2 - temp_bbox[1]),
+                    temp_text, theme.HERO_TEMP)
+
+        if feels_text:
+            canvas.text_centered(rect, y + theme.ICON_HERO + 14, feels_text, theme.HERO_DESC)
 
     def _draw_graph(self, canvas, rect, hourly):
         """Temperature over the coming day, as a simple line chart."""
@@ -119,8 +119,9 @@ class WeatherScreen(Screen):
         low, high = min(temps), max(temps)
         span = high - low or 1  # a flat day would divide by zero
 
+        axis_y = plot.bottom - AXIS_OFFSET
         top = plot.y + GRAPH_TOP_PAD
-        bottom = plot.bottom - GRAPH_BOTTOM_PAD
+        bottom = axis_y - POINT_CLEARANCE
         left = plot.x + GRAPH_SIDE_PAD
         step_x = (plot.w - 2 * GRAPH_SIDE_PAD) / (len(hourly) - 1)
 
@@ -129,7 +130,7 @@ class WeatherScreen(Screen):
             for i, temp in enumerate(temps)
         ]
 
-        canvas.line([plot.x, bottom + 6, plot.right, bottom + 6])
+        canvas.line([plot.x, axis_y, plot.right, axis_y])
         canvas.line(points, width=2)
 
         for (x, y), step in zip(points, hourly):
@@ -142,7 +143,7 @@ class WeatherScreen(Screen):
 
             hour = step['time'][:2]
             hour_x = x - canvas.text_width(hour, theme.GRAPH_LABEL) // 2
-            canvas.text((hour_x, bottom + 10), hour, theme.GRAPH_LABEL)
+            canvas.text((hour_x, axis_y + 6), hour, theme.GRAPH_LABEL)
 
     def _draw_daily(self, canvas, rect, forecast):
         """One column per day: name, icon, high/low and rain chance."""
