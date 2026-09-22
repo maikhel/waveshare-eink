@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-22
 **Branch:** `playlist-screens`
-**Status:** steps 1–2 done, step 3 next
+**Status:** steps 1–3 done, step 4 next
 
 ## Goal
 
@@ -149,14 +149,19 @@ Every fetcher writes the same envelope:
 {
   "source": "github",
   "fetched_at": "2026-09-22T09:15:00+00:00",
-  "ok": true,
   "data": { }
 }
 ```
 
+**The `ok` flag was dropped.** A fetch that fails now writes nothing at all and
+leaves the previous result in place, so there is no `ok: false` state to
+represent — and stale data beats a vanished screen at these cadences. Readers
+also accept pre-envelope files (the whole document is the payload, age unknown),
+so a freshly deployed renderer keeps working until cron rewrites `data/`.
+
 Renderer rules, tuned for the relaxed-freshness decision:
 
-- **Missing file, or `ok: false`** → source unavailable → screens requiring it
+- **Missing or unreadable file** → source unavailable → screens requiring it
   report `available() == False` → skipped.
 - **Present and `ok: true`** → render it, however old it is. Old data is expected
   and is not decorated with warnings; a three-hour-old weather reading is simply

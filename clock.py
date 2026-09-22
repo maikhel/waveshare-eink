@@ -37,6 +37,14 @@ NIGHT_END_HOUR = 7       # 07:00 exclusive
 def is_night(now):
     return NIGHT_START_HOUR <= now.hour < NIGHT_END_HOUR
 
+def describe_age(age):
+    if age is None:
+        return "age unknown"
+    minutes = int(age.total_seconds() // 60)
+    if minutes < 60:
+        return f"{minutes}m old"
+    return f"{minutes // 60}h{minutes % 60:02d}m old"
+
 def run_clock():
     logging.info("Starting E-Ink clock")
 
@@ -78,8 +86,14 @@ def run_clock():
             ctx = Context(now=now, fonts=fonts)
             slide = playlist.tick(ctx)
             if slide.rotated:
-                logging.info("Showing screen: %s",
-                             slide.entry.id if slide.entry else "none eligible")
+                if slide.is_empty:
+                    logging.info("Showing screen: none eligible")
+                else:
+                    # Data age makes a silently dead cron job visible in the log.
+                    ages = ", ".join(
+                        f"{source} {describe_age(ctx.age(source))}"
+                        for source in slide.screen.requires)
+                    logging.info("Showing screen: %s (%s)", slide.entry.id, ages)
             image = render.draw(ctx, epd.width, epd.height, slide, config)
 
             buf = epd.getbuffer(image)

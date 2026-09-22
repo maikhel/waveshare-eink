@@ -1,58 +1,39 @@
-import os
 import requests
-import json
-import sys
-from datetime import datetime, timezone
-from dotenv import load_dotenv
+
+import common
 
 USERNAME = "maikhel"
-REPO= "vas-panel/VAS_valuation_manager"
+REPO = "vas-panel/VAS_valuation_manager"
+API = "https://api.github.com/search/issues"
 
-load_dotenv()
 
 def fetch_github():
-    api_key = os.getenv('GITHUB_TOKEN')
-    if not api_key:
-        raise ValueError("GITHUB_TOKEN not set")
-
     headers = {
-        'Authorization': f'token {api_key}',
-        'Accept': 'application/vnd.github.v3+json'
+        'Authorization': f"token {common.require_env('GITHUB_TOKEN')}",
+        'Accept': 'application/vnd.github.v3+json',
     }
 
-    created_url = f"https://api.github.com/search/issues?q=type:pr+author:{USERNAME}+is:open+repo:{REPO}"
-    created_response = requests.get(created_url, headers=headers)
-    created_response.raise_for_status()
-    items = created_response.json().get("items", [])
-    
-    # Extract only the required fields
-    opened_prs_data = []
-    for item in items:
-        pr_info = {
+    created = requests.get(
+        f"{API}?q=type:pr+author:{USERNAME}+is:open+repo:{REPO}", headers=headers)
+    created.raise_for_status()
+
+    opened_prs = [
+        {
             'title': item['title'],
             'state': item['state'],
-            'draft': item.get('draft', False)
+            'draft': item.get('draft', False),
         }
-        opened_prs_data.append(pr_info)
+        for item in created.json().get('items', [])
+    ]
 
-    review_url = f"https://api.github.com/search/issues?q=type:pr+review-requested:{USERNAME}+is:open"
-    review_prs_count = requests.get(review_url, headers=headers).json().get("total_count", 0)
+    review = requests.get(
+        f"{API}?q=type:pr+review-requested:{USERNAME}+is:open", headers=headers)
+    review.raise_for_status()
 
-    github_info = {
-        'opened_prs': opened_prs_data,
-        'prs_for_review': review_prs_count,
-        'last_updated': datetime.now(timezone.utc).isoformat()
+    return {
+        'opened_prs': opened_prs,
+        'prs_for_review': review.json().get('total_count', 0),
     }
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    data_file = os.path.join(script_dir, '..', 'data', 'github.json')
-    with open(data_file, 'w') as f:
-        json.dump(github_info, f, indent=2)
 
-    return github_info
-
-try:
-    fetch_github()
-except Exception as e:
-    print(f"[ERROR] {e}")
-    sys.exit(1)
+common.run('github', fetch_github)

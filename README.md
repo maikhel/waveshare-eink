@@ -24,12 +24,30 @@ schedule, the renderer draws whatever is currently in `data/`.
   - `screens/` — one module per screen, each declaring the data it needs
   - `layout.py`, `theme.py` — layout primitives and the type scale
 - `services/` — fetch scripts for weather, GitHub PRs, and Steam friend statuses; each writes JSON to `data/` (run them from cron)
+  - `common.py` — credentials, atomic writes, shared error handling
 - `playlist.json` — which screens rotate, for how long, and when
 - `demo.py` — renders to `preview.png` plus `preview_<id>.png` per screen, without the e-ink hardware, using `example_data/`
 - `shutdown.py`, `deep_clean.py` — clear the panel safely / remove ghosting
 
 Screens that have no data, or nothing worth showing, drop out of the rotation
 instead of displaying an empty panel.
+
+## Data
+
+Each service writes one file to `data/`, wrapped in an envelope:
+
+```json
+{ "source": "github", "fetched_at": "2026-09-22T12:25:11+00:00", "data": {  } }
+```
+
+Writes go through a temporary file and a rename, so the renderer can never read
+a half-written file. A fetch that fails writes nothing and leaves the previous
+result in place.
+
+Services run as rarely as suits them — weather every few hours, Steam hourly —
+and old data is simply drawn as-is; `fetched_at` is logged rather than shown, so
+a cron job that has quietly died is visible in `clock.log`. Only a missing or
+unreadable file takes a screen out of the rotation.
 
 ## The playlist
 

@@ -1,17 +1,11 @@
 import requests
-import json
-import os
-import sys
 from datetime import datetime, timedelta
 from collections import defaultdict
-from dotenv import load_dotenv
 
-load_dotenv()
+import common
 
 def fetch_weather():
-    api_key = os.getenv('OPEN_WEATHER_API_KEY')
-    if not api_key:
-        raise ValueError("OPEN_WEATHER_API_KEY environment variable not set")
+    api_key = common.require_env('OPEN_WEATHER_API_KEY')
 
     # "Warsaw,PL"
     lon = 21.017532
@@ -65,18 +59,10 @@ def fetch_weather():
                 'midnight': grouped[target_date]['midnight']
             })
 
-    weather_info = {
+    return {
         'current': current,
         'forecast': forecast
     }
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    data_file = os.path.join(script_dir, '..', 'data', 'weather.json')
-    with open(data_file, 'w') as f:
-        json.dump(weather_info, f, indent=2)
 
-try:
-    fetch_weather()
-except Exception as e:
-    print(f"[ERROR] {e}")
-    sys.exit(1)
+common.run('weather', fetch_weather)

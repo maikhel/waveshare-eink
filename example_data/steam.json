@@ -1,20 +1,23 @@
 {
-  "statuses": {
-    "76561198000000001": {
-      "personaname": "Friend1",
-      "personastate": 0,
-      "gameextrainfo": null
-    },
-    "76561198000000002": {
-      "personaname": "Friend2",
-      "personastate": 1,
-      "gameextrainfo": "Apex Legends"
-    },
-    "76561198000000003": {
-      "personaname": "Maikhel",
-      "personastate": 0,
-      "gameextrainfo": null
+  "source": "steam",
+  "fetched_at": "2026-09-22T12:31:47+00:00",
+  "data": {
+    "statuses": {
+      "76561198000000001": {
+        "personaname": "Friend1",
+        "personastate": 0,
+        "gameextrainfo": null
+      },
+      "76561198000000002": {
+        "personaname": "Friend2",
+        "personastate": 1,
+        "gameextrainfo": "Apex Legends"
+      },
+      "76561198000000003": {
+        "personaname": "Maikhel",
+        "personastate": 0,
+        "gameextrainfo": null
+      }
     }
-  },
-  "last_updated": "2025-10-27T17:56:08.171691Z"
+  }
 }

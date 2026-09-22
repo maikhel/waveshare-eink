@@ -1,9 +1,8 @@
 """The Screen contract and the render context handed to every screen."""
-import json
-import os
 from dataclasses import dataclass, field
 from datetime import datetime
 
+from .. import store
 from ..theme import Fonts
 
 
@@ -19,26 +18,21 @@ class Context:
     data_dir: str = 'data'
     _cache: dict = field(default_factory=dict, repr=False)
 
+    def record(self, source):
+        """The stored Record for a source, or None if it is unreadable."""
+        if source not in self._cache:
+            self._cache[source] = store.load(self.data_dir, source)
+        return self._cache[source]
+
     def load(self, source):
-        """Return the JSON written by `services/fetch_<source>.py`, or None.
+        """The payload a screen draws, or None if the source is unavailable."""
+        record = self.record(source)
+        return record.data if record else None
 
-        None covers a missing file and an unparseable one alike — the latter
-        happens today because fetchers write in place and can be read mid-write.
-        Either way the caller treats the source as unavailable rather than
-        raising in the middle of a render.
-        """
-        if source in self._cache:
-            return self._cache[source]
-
-        path = os.path.join(self.data_dir, f'{source}.json')
-        try:
-            with open(path, 'r') as f:
-                payload = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            payload = None
-
-        self._cache[source] = payload
-        return payload
+    def age(self, source):
+        """How old this source's data is, or None if unknown."""
+        record = self.record(source)
+        return record.age(self.now) if record else None
 
 
 class Screen:
