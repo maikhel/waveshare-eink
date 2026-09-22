@@ -8,17 +8,16 @@ if os.path.exists(libdir):
     sys.path.append(libdir)
 
 from waveshare_epd import epd7in5_V2
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 import time
 
-import drawing
+from eink import render, theme
+from eink.screens import Context
 
 OUT_DIR = os.path.expanduser('~/eink/logs')
 os.makedirs(OUT_DIR, exist_ok=True)
 LOG_FILE = os.path.join(OUT_DIR, 'clock.log')
-
-font = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s: %(message)s',
@@ -39,6 +38,7 @@ def is_night(now):
 def run_clock():
     logging.info("Starting E-Ink clock")
 
+    fonts = theme.Fonts()
     epd = epd7in5_V2.EPD()
     logging.debug("Initializing display")
 
@@ -69,9 +69,8 @@ def run_clock():
                 partials_since_full = FULL_REFRESH_EVERY  # force full refresh on wake
 
             logging.debug("Drawing current date and time")
-            image = drawing.draw_date_and_time(epd.width, epd.height, font)
-            drawing.draw_weather_info(image, epd.width, epd.height, font)
-            drawing.draw_steam_or_github(image, font)
+            ctx = Context(now=now, fonts=fonts)
+            image = render.draw(ctx, epd.width, epd.height)
 
             buf = epd.getbuffer(image)
 
