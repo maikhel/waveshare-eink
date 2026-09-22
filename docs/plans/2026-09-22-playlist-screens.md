@@ -114,10 +114,10 @@ the next screen once, at the moment of rotation, then leave it alone.
   "tick_seconds": 60,
   "header": { "clock": true, "indicator": true },
   "screens": [
-    { "id": "work", "dwell": "5m",
+    { "id": "work", "dwell": "10m",
       "when": [{ "days": "weekdays", "hours": [8, 18] }] },
-    { "id": "weather", "dwell": "3m" },
-    { "id": "steam", "dwell": "3m",
+    { "id": "weather", "dwell": "6m" },
+    { "id": "steam", "dwell": "6m",
       "when": [{ "days": "weekdays", "hours": [17, 24] },
                { "days": "weekends" }] }
   ]
@@ -193,6 +193,12 @@ Rotation changes the whole panel; a plain tick changes only the header clock.
 
 - **Rotation** → full refresh (`init_fast` + `display`). This also flushes
   ghosting, conveniently on the same cadence as content changes.
+
+  Because full refreshes now follow content rather than a timer, the dwell times
+  set the flashing rate: 10m/6m/6m gives 8 full refreshes an hour on a weekday
+  and 10 in the evening. Shorter dwells were tried first (5m/3m/3m) and gave 15
+  an hour during work hours, which is a visible flash every few minutes in a
+  room you are sitting in. None of this data changes fast enough to justify it.
 - **In-dwell tick** → partial refresh.
 - `FULL_REFRESH_EVERY = 10` becomes: full refresh **on rotation, or after 10
   partials, whichever comes first.**
