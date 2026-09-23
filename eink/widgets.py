@@ -7,7 +7,8 @@ RULE_OFFSET = 34
 ICON_GAP = 10
 
 
-def section_header(canvas, rect, title, count=None, icon=None, icon_size=28):
+def section_header(canvas, rect, title, count=None, icon=None, icon_size=28,
+                   rule=True):
     """Draw a centred band heading with an optional count, and return the rect below.
 
     An `icon` is centred together with the title as one group, so the pair stays
@@ -26,8 +27,9 @@ def section_header(canvas, rect, title, count=None, icon=None, icon_size=28):
     if count is not None:
         canvas.text_right(rect, rect.y + 2, str(count), theme.COUNT)
 
-    y = rect.y + RULE_OFFSET
-    canvas.line([rect.x, y, rect.right, y])
+    if rule:
+        y = rect.y + RULE_OFFSET
+        canvas.line([rect.x, y, rect.right, y])
 
     return Rect(rect.x, rect.y + HEADER_HEIGHT, rect.w, rect.h - HEADER_HEIGHT)
 

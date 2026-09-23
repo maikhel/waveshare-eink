@@ -7,5 +7,5 @@ def day_abbr(dt):
 
 
 def header_date(dt):
-    """e.g. 'Tue 22.09'"""
-    return f"{day_abbr(dt)} {dt.strftime('%d.%m')}"
+    """e.g. 'Tue 22.09.2026'"""
+    return f"{day_abbr(dt)} {dt.strftime('%d.%m.%Y')}"

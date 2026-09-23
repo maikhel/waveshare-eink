@@ -32,7 +32,7 @@ UNKNOWN_ICON = 'wi-alien-big.png'
 # Below this, printing a percentage costs more attention than it repays.
 POP_THRESHOLD = 20
 
-DAILY_HEIGHT = 158
+DAILY_HEIGHT = 136
 LEFT_WIDTH = 330
 COLUMN_GAP = 24
 ICON_TEMP_GAP = 10
@@ -113,7 +113,7 @@ class WeatherScreen(Screen):
 
     def _draw_graph(self, canvas, rect, hourly):
         """Temperature over the coming day, as a simple line chart."""
-        plot = widgets.section_header(canvas, rect, "NEXT 24H")
+        plot = widgets.section_header(canvas, rect, "Next 24 h", rule=False)
 
         temps = [step['temp'] for step in hourly]
         low, high = min(temps), max(temps)
@@ -149,20 +149,20 @@ class WeatherScreen(Screen):
         """One column per day: name, icon, high/low and rain chance."""
         columns = rect.columns(len(forecast))
         for i, (column, day) in enumerate(zip(columns, forecast)):
-            canvas.text_centered(column, rect.y + 8,
+            canvas.text_centered(column, rect.y + 6,
                                  day_abbr(datetime.fromisoformat(day['date'])),
                                  theme.FORECAST_DAY)
 
             canvas.paste(_icon(canvas, day['midday']['icon'], theme.ICON_DAY),
-                         (column.center_x_for(theme.ICON_DAY), rect.y + 34))
+                         (column.center_x_for(theme.ICON_DAY), rect.y + 30))
 
-            canvas.text_centered(column, rect.y + 88,
+            canvas.text_centered(column, rect.y + 80,
                                  f"{day['midday']['temp']}°/{day['midnight']['temp']}°",
                                  theme.FORECAST_TEMP)
 
             pop = _pop_label(day['midday'].get('pop'))
             if pop:
-                canvas.text_centered(column, rect.y + 124, pop, theme.POP)
+                canvas.text_centered(column, rect.y + 114, pop, theme.POP)
 
             if i < len(columns) - 1:
                 line_x = (column.right + columns[i + 1].x) // 2

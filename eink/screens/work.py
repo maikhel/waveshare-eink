@@ -7,6 +7,8 @@ COLUMN_GAP = 30
 MARKER_WIDTH = 26
 ROW_HEIGHT = 62
 META_OFFSET = 26
+EMPTY_ICON = 64
+EMPTY_CAPTION_GAP = 14
 
 # reviewDecision -> (marker shape, label). None means nobody has looked yet.
 REVIEW_STATES = {
@@ -51,7 +53,7 @@ class WorkScreen(Screen):
         self._draw_review_queue(canvas, right, github)
 
     def _draw_mine(self, canvas, rect, prs):
-        rows = widgets.section_header(canvas, rect, "MY PRS", len(prs))
+        rows = widgets.section_header(canvas, rect, "My PRs", len(prs))
         if not prs:
             canvas.text((rows.x, rows.y), "Nothing open.", theme.LIST)
             return
@@ -74,9 +76,9 @@ class WorkScreen(Screen):
         queue = github.get('review_requested', [])
         total = github.get('prs_for_review', len(queue))
 
-        rows = widgets.section_header(canvas, rect, "TO REVIEW", total)
+        rows = widgets.section_header(canvas, rect, "To Review", total)
         if not queue:
-            canvas.text((rows.x, rows.y), "Nothing waiting :)", theme.LIST)
+            self._draw_nothing_waiting(canvas, rows)
             return
 
         shown = list(self._rows(rows, queue, reserve_last=total > 0))
@@ -92,6 +94,17 @@ class WorkScreen(Screen):
         if hidden > 0:
             last = shown[-1][1]
             canvas.text((rect.x, last.y + ROW_HEIGHT), f"+ {hidden} more", theme.LIST_META)
+
+    @staticmethod
+    def _draw_nothing_waiting(canvas, rect):
+        """An empty queue is good news, so give it the column rather than a line."""
+        caption = "Nothing waiting"
+        group_h = EMPTY_ICON + EMPTY_CAPTION_GAP + theme.LIST
+        y = rect.center_y_for(group_h)
+
+        canvas.paste(canvas.icon('github', 'icon.png', size=EMPTY_ICON),
+                     (rect.center_x_for(EMPTY_ICON), y))
+        canvas.text_centered(rect, y + EMPTY_ICON + EMPTY_CAPTION_GAP, caption, theme.LIST)
 
     @staticmethod
     def _rows(rect, items, reserve_last=False):
