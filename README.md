@@ -27,7 +27,7 @@ schedule, the renderer draws whatever is currently in `data/`.
   - `playlist.py` — decides which screen is showing
   - `screens/` — one module per screen, each declaring the data it needs
   - `layout.py`, `theme.py` — layout primitives and the type scale
-- `services/` — fetch scripts for weather, GitHub PRs, and Steam friend statuses; each writes JSON to `data/` (run them from cron)
+- `services/` — fetch scripts for weather, GitHub PRs, and Steam friend statuses; each writes JSON to `data/` (run them from systemd timers)
   - `common.py` — credentials, atomic writes, shared error handling
 - `playlist.json` — which screens rotate, for how long, and when
 - `demo.py` — renders to `preview.png` plus `preview_<id>.png` per screen, without the e-ink hardware, using `example_data/`
@@ -50,7 +50,7 @@ result in place.
 
 Services run as rarely as suits them — weather every few hours, Steam hourly —
 and old data is simply drawn as-is; `fetched_at` is logged rather than shown, so
-a cron job that has quietly died is visible in `clock.log`. Only a missing or
+a timer that has quietly stopped firing is visible in `clock.log`. Only a missing or
 unreadable file takes a screen out of the rotation.
 
 ## The playlist
@@ -76,5 +76,51 @@ mid-slot.
 
 1. Install the [Waveshare e-Paper library](https://github.com/waveshareteam/e-Paper) on the Pi, plus `pillow`, `requests`, and `python-dotenv`
 2. Copy `.env.example` to `.env` and fill in your API keys and Steam IDs (`STEAM_USER_ID` is your own, for recent playtime)
-3. Schedule the `services/` scripts with cron and run `clock.py` (e.g. as a systemd service)
+3. Schedule the `services/` scripts with systemd timers (see below) and run `clock.py` (e.g. as a systemd service)
 4. Edit `playlist.json` to choose which screens rotate and when
+
+## Service timers
+
+Each fetch script runs as a oneshot service started by a timer of the same name:
+`fetch_weather`, `fetch_github` and `fetch_steam`. A timer like this one runs
+every three hours:
+
+```ini
+# /etc/systemd/system/fetch_weather.timer
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=3h
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
+
+Prefer `OnBootSec`/`OnUnitActiveSec` over `OnCalendar`: they count elapsed time,
+so the clock moving for daylight saving can't affect them. In October 2026 the
+timers stopped firing entirely after the switch to winter time, with nothing
+logged as an error.
+
+### When data stops updating
+
+A service whose timer has stopped looks healthy: `systemctl status` shows no
+error, only a last run that is days old. Check the timers first:
+
+```bash
+systemctl list-timers --all | grep fetch_                 # NEXT should be soon, not n/a or in the past
+journalctl -u fetch_weather.service -n 50 --no-pager      # the latest runs and any traceback
+grep fetched_at data/*.json                               # when each fetch last succeeded
+```
+
+Restart the timers so systemd works out the next run again, then start each
+service once to fetch now:
+
+```bash
+sudo systemctl restart fetch_weather.timer fetch_github.timer fetch_steam.timer
+sudo systemctl start fetch_weather.service fetch_github.service fetch_steam.service
+```
+
+After editing a unit file, run `sudo systemctl daemon-reload` before restarting.
+To see the real error from a failing fetch, run the script by hand as the
+service's user, e.g. `python3 services/fetch_github.py; echo $?`. A failed fetch
+prints `[ERROR] <source>: ...` and leaves the previous data in place.
